@@ -1,0 +1,43 @@
+{
+  "rules": {
+    "devices": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['deviceId', 'helmetStatus', 'accidentStatus', 'gpsValid'])"
+      }
+    },
+    "alerts": {
+      ".read": true,
+      "$alertId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['timestamp', 'status']) && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent' || newData.child('status').val() === 'resolved')"
+      }
+    },
+    "contacts": {
+      ".read": true,
+      "$contactId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'phone', 'isPrimary'])"
+      }
+    },
+    "notifications": {
+      ".read": true,
+      "$notificationId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['type', 'title', 'body', 'timestamp', 'read'])"
+      }
+    },
+    "settings": {
+      ".read": true,
+      ".write": true
+    },
+    "fcmTokens": {
+      ".read": true,
+      "$tokenId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['token', 'updatedAt'])"
+      }
+    }
+  }
+}
