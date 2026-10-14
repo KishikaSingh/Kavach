@@ -1,45 +1,135 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
+    "deviceOwners": {
+      ".read": false,
+      ".write": false
+    },
     "devices": {
       "$deviceId": {
-        ".read": true,
-        ".write": true,
-        ".validate": "newData.hasChildren(['deviceId', 'helmetStatus', 'accidentStatus', 'gpsValid'])"
+        ".read": "auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true",
+        ".write": "auth != null && auth.token.device_id === $deviceId",
+        ".validate": "newData.hasChildren(['deviceId', 'helmetStatus', 'accidentStatus', 'gpsValid']) && newData.child('deviceId').val() === $deviceId && (newData.child('helmetStatus').val() === 'connected' || newData.child('helmetStatus').val() === 'disconnected') && (newData.child('accidentStatus').val() === 'normal' || newData.child('accidentStatus').val() === 'warning' || newData.child('accidentStatus').val() === 'alert') && newData.child('gpsValid').isBoolean()"
       }
     },
     "alerts": {
-      ".read": true,
       "$deviceId": {
+        ".read": "auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true",
         "$alertId": {
-          ".write": true,
-          ".validate": "newData.hasChildren(['timestamp', 'status']) && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent' || newData.child('status').val() === 'resolved')"
+          ".write": "auth != null && auth.token.device_id === $deviceId && !data.exists()",
+          ".validate": "newData.hasChildren(['timestamp', 'status']) && ((auth.token.device_id === $deviceId && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent')) || (auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent' || newData.child('status').val() === 'resolved')))",
+          "timestamp": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isString()"
+          },
+          "severity": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isString()"
+          },
+          "latitude": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isNumber()"
+          },
+          "longitude": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isNumber()"
+          },
+          "gpsValid": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isBoolean()"
+          },
+          "smsStatus": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.isString() && (newData.val() === 'pending' || newData.val() === 'confirmed' || newData.val() === 'failed' || newData.val() === 'unknown')"
+          },
+          "deviceId": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": "newData.val() === $deviceId"
+          },
+          "status": {
+            ".write": "(auth != null && auth.token.device_id === $deviceId && newData.val() !== 'resolved') || (auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true && newData.val() === 'resolved')",
+            ".validate": "newData.isString() && (newData.val() === 'new' || newData.val() === 'sent' || newData.val() === 'resolved')"
+          },
+          "$other": {
+            ".write": "auth != null && auth.token.device_id === $deviceId",
+            ".validate": false
+          }
         }
       }
     },
-    "contacts": {
-      ".read": true,
-      "$contactId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['name', 'phone', 'isPrimary'])"
+    "users": {
+      "$uid": {
+        "contacts": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "$contactId": {
+            ".validate": "newData.hasChildren(['name', 'phone', 'isPrimary']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 80 && newData.child('phone').isString() && newData.child('phone').val().matches(/^\\+[1-9][0-9]{7,14}$/) && newData.child('isPrimary').isBoolean()",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+            },
+            "phone": {
+              ".validate": "newData.isString() && newData.val().matches(/^\\+[1-9][0-9]{7,14}$/)"
+            },
+            "isPrimary": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "notifications": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "$notificationId": {
+            ".validate": "newData.hasChildren(['type', 'title', 'body', 'timestamp', 'read']) && (newData.child('type').val() === 'accident' || newData.child('type').val() === 'disconnected' || newData.child('type').val() === 'gps' || newData.child('type').val() === 'sensor' || newData.child('type').val() === 'alertUpdate') && newData.child('title').isString() && newData.child('body').isString() && newData.child('timestamp').isString() && newData.child('read').isBoolean()"
+          }
+        },
+        "settings": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['notifications'])",
+          "notifications": {
+            ".validate": "newData.hasChildren(['push', 'sound'])",
+            "push": {
+              ".validate": "newData.isBoolean()"
+            },
+            "sound": {
+              ".validate": "newData.isBoolean()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "pushTokens": {
+          ".read": false,
+          ".write": "auth != null && auth.uid === $uid",
+          "$tokenId": {
+            ".validate": "newData.hasChildren(['token', 'platform', 'updatedAt']) && newData.child('token').isString() && newData.child('token').val().matches(/^Expo(nent)?PushToken\\[[A-Za-z0-9_-]+\\]$/) && (newData.child('platform').val() === 'android' || newData.child('platform').val() === 'ios') && newData.child('updatedAt').isString()",
+            "token": {
+              ".validate": "newData.isString() && newData.val().matches(/^Expo(nent)?PushToken\\[[A-Za-z0-9_-]+\\]$/)"
+            },
+            "platform": {
+              ".validate": "newData.isString() && (newData.val() === 'android' || newData.val() === 'ios')"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
       }
     },
-    "notifications": {
-      ".read": true,
-      "$notificationId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['type', 'title', 'body', 'timestamp', 'read'])"
-      }
-    },
-    "settings": {
-      ".read": true,
-      ".write": true
-    },
-    "fcmTokens": {
-      ".read": true,
-      "$tokenId": {
-        ".write": true,
-        ".validate": "newData.hasChildren(['token', 'updatedAt'])"
-      }
+    "pushReceipts": {
+      ".read": false,
+      ".write": false
     }
   }
 }

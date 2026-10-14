@@ -1,94 +1,86 @@
 import { Platform } from 'react-native';
-
-// Push permission, token registration, and tap handling.
-// This is not the in-app inbox (that is Person 3's inboxService / useNotifications).
-// Screens should not import this. Person 1 should call initPushNotifications from App.
-
-function loadExpoNotifications() {
-  try {
-    return require('expo-notifications');
-  } catch {
-    return null;
-  }
-}
+import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
+import { DATA_SOURCE } from '../config.js';
 
 let tapHandler = null;
-let responseSub = null;
-let receiveSub = null;
+let responseSubscription = null;
+
+Notifications.setNotificationHandler({
+  handleNotification: async (notification) => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: notification.request.content.sound != null,
+    shouldSetBadge: true,
+  }),
+});
 
 export function setAccidentAlertTapHandler(handler) {
   tapHandler = typeof handler === 'function' ? handler : null;
 }
 
-function handleData(data) {
-  if (!data || data.type !== 'accident' || !data.alertId) return;
-  if (tapHandler) tapHandler({ alertId: data.alertId, type: 'accident' });
+function handleNotificationResponse(response) {
+  const data = response?.notification?.request?.content?.data;
+  if (data?.type === 'accident' && data.alertId && tapHandler) {
+    tapHandler({ alertId: String(data.alertId), type: 'accident' });
+  }
+}
+
+function getProjectId() {
+  return Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
 }
 
 export async function initPushNotifications({ onAccidentAlertTap } = {}) {
-  if (onAccidentAlertTap) setAccidentAlertTapHandler(onAccidentAlertTap);
-
-  const Notifications = loadExpoNotifications();
-  if (!Notifications) {
-    return {
-      available: false,
-      reason: 'expo-notifications is not installed yet. Add it when Person 1 scaffolds Expo.',
-    };
+  if (DATA_SOURCE !== 'live') {
+    return { available: false, reason: 'Remote push notifications require live mode.' };
+  }
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    return { available: false, reason: `Remote push notifications are not supported on ${Platform.OS}.` };
   }
 
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
+  if (onAccidentAlertTap) setAccidentAlertTapHandler(onAccidentAlertTap);
 
-  const permissions = await Notifications.requestPermissionsAsync();
-  const granted = permissions.granted || permissions.status === 'granted';
-  if (!granted) {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Emergency alerts',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#D32F2F',
+    });
+  }
+
+  if (responseSubscription) responseSubscription.remove();
+  responseSubscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+  handleNotificationResponse(await Notifications.getLastNotificationResponseAsync());
+
+  const projectId = getProjectId();
+  if (!projectId) {
+    throw new Error('EAS project ID is missing. Set EXPO_PUBLIC_EAS_PROJECT_ID before enabling live push notifications.');
+  }
+
+  let permission = await Notifications.getPermissionsAsync();
+  if (permission.status !== 'granted') permission = await Notifications.requestPermissionsAsync();
+  if (permission.status !== 'granted') {
     return { available: true, permission: 'denied', token: null };
   }
 
-  let token = null;
-  try {
-    const result = await Notifications.getExpoPushTokenAsync();
-    token = result?.data || null;
-  } catch {
-    token = null;
-  }
-
-  if (token) {
-    try {
-      const { saveFcmToken } = require('./firebaseService.js');
-      await saveFcmToken(token, Platform.OS);
-    } catch {
-      // Demo mode or Firebase not connected: keep the local token anyway.
-    }
-  }
-
-  if (responseSub) responseSub.remove();
-  responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
-    const data = response?.notification?.request?.content?.data;
-    handleData(data);
-  });
-
-  if (receiveSub) receiveSub.remove();
-  receiveSub = Notifications.addNotificationReceivedListener(() => {});
+  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+  const { saveExpoPushToken } = require('./firebaseService.js');
+  await saveExpoPushToken(token, Platform.OS);
 
   return { available: true, permission: 'granted', token };
 }
 
 export function stopPushNotifications() {
-  if (responseSub) responseSub.remove();
-  if (receiveSub) receiveSub.remove();
-  responseSub = null;
-  receiveSub = null;
+  if (responseSubscription) responseSubscription.remove();
+  responseSubscription = null;
+  tapHandler = null;
 }
 
 export async function getPushPermissionStatus() {
-  const Notifications = loadExpoNotifications();
-  if (!Notifications) return { available: false, status: 'unavailable' };
+  if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
+    return { available: false, status: 'unavailable' };
+  }
   const permissions = await Notifications.getPermissionsAsync();
   return {
     available: true,
