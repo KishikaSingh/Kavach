@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Smart Helmet",
+    "slug": "smart-helmet-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.smarthelmet.app",
+      "softwareKeyboardLayoutMode": "resize"
+    }
+  }
+}

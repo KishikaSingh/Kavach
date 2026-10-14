@@ -1,0 +1,13 @@
+{
+  "name": "kavach-functions",
+  "description": "Alert-triggered FCM push for the Kavach smart helmet app (Person 2).",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.3.2"
+  }
+}
