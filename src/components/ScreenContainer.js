@@ -12,6 +12,7 @@ export default function ScreenContainer({
   onRefresh,
   refreshing = false,
   edges = ['top'],
+  scrollRef,
   contentContainerStyle,
   style,
 }) {
@@ -19,6 +20,7 @@ export default function ScreenContainer({
     <SafeAreaView style={[styles.safe, style]} edges={edges}>
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[styles.content, contentContainerStyle]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
