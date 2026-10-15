@@ -4,7 +4,10 @@
 #include <ctype.h>
 #include <HTTPClient.h>
 #include <HardwareSerial.h>
+#include <math.h>
 #include <Preferences.h>
+#include <stdlib.h>
+#include <string.h>
 #include <TinyGPSPlus.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
@@ -457,7 +460,7 @@ void publishTelemetry(float impactG) {
   JsonDocument telemetry;
   telemetry["deviceId"] = DEVICE_ID;
   telemetry["helmetStatus"] = "connected";
-  telemetry["accidentStatus"] = warning ? "warning" : "normal";
+  telemetry["accidentStatus"] = impactG >= IMPACT_THRESHOLD_G ? "alert" : (warning ? "warning" : "normal");
   if (gpsValid) {
     telemetry["latitude"] = gps.location.lat();
     telemetry["longitude"] = gps.location.lng();
