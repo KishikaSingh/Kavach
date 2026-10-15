@@ -11,6 +11,7 @@ import DemoBadge from '../components/DemoBadge';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 import AppButton from '../components/AppButton';
+import HelmetPickerModal from '../components/HelmetPickerModal';
 
 import useDevice from '../hooks/useDevice';
 import useAlerts from '../hooks/useAlerts';
@@ -33,6 +34,7 @@ export default function DashboardScreen({ navigation }) {
   const { contacts } = useContacts();
   const { unreadCount } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -134,7 +136,9 @@ export default function DashboardScreen({ navigation }) {
           icon="hardware-chip-outline"
           title="Helmet Status"
           value={connected ? 'Connected' : 'Disconnected'}
+          subtitle={`${device?.deviceId || 'No helmet'} - tap to switch`}
           tone={connected ? 'green' : 'orange'}
+          onPress={() => setPickerOpen(true)}
         />
         <StatusCard
           style={styles.gridItem}
@@ -304,6 +308,12 @@ export default function DashboardScreen({ navigation }) {
           ))
         )}
       </View>
+
+      {/* Helmet switch popup: opens when the Helmet Status card is tapped */}
+      <HelmetPickerModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+      />
     </ScreenContainer>
   );
 }
