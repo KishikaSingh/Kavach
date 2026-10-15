@@ -18,7 +18,7 @@ import { colors, radius, shadows, spacing, typography } from '../constants/theme
 import { formatDateTime, timeAgo } from '../utils/formatTime';
 import { getGpsState, GPS_LABELS } from '../utils/deviceStatus';
 
-export default function DeviceSettingsScreen() {
+export default function DeviceSettingsScreen({navigation}) {
   const { device, dataSource, backendReachable, loading, error, refresh } = useDevice();
   const { settings, updateSettings } = useSettings();
   const [refreshing, setRefreshing] = useState(false);
@@ -107,7 +107,13 @@ export default function DeviceSettingsScreen() {
 
       <Text style={styles.section}>Connection</Text>
       <View style={[styles.card, shadows.card]}>
-        <ProfileRow icon="finger-print-outline" label="Device identifier" value={device?.deviceId || 'Not available'} />
+        
+                <ProfileRow
+          icon="finger-print-outline"
+          label="Active helmet"
+          value={`${device?.deviceId || 'Not available'} (tap to change)`}
+          onPress={() => navigation.navigate('SelectHelmet')}
+        />
         <ProfileRow icon="cloud-outline" label="Backend connection" value={backend.v} />
         <ProfileRow icon="swap-horizontal-outline" label="Data source" value={dataSource === 'demo' ? 'Demo (simulated data)' : 'Live (helmet data)'} last />
       </View>

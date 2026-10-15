@@ -1,6 +1,7 @@
 // Owned by Person 1 (only P1 edits this file).
 // Flow: Splash -> Onboarding (first launch only) -> Main (bottom tabs).
-// Stack screens above the tabs: AlertDetails, ContactForm, Notifications, Profile.
+// Stack screens above the tabs: AlertDetails, ContactForm, Notifications,
+// Profile, SelectHelmet.
 import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -16,7 +17,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import DeviceSettingsScreen from '../screens/DeviceSettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-// Person 2 owns these. Placeholders until their versions land (same file names, same default export).
+import SelectHelmetScreen from '../screens/SelectHelmetScreen';
 import LocationScreen from '../screens/LocationScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import AlertDetailsScreen from '../screens/AlertDetailsScreen';
@@ -28,7 +29,14 @@ const Tab = createBottomTabNavigator();
 
 const navTheme = {
   ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: colors.background, primary: colors.primary, card: colors.white, text: colors.navy, border: colors.border },
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.background,
+    primary: colors.primary,
+    card: colors.white,
+    text: colors.navy,
+    border: colors.border,
+  },
 };
 
 const TAB_ICONS = {
@@ -40,7 +48,8 @@ const TAB_ICONS = {
 };
 
 function MainTabs() {
-  const insets = useSafeAreaInsets(); // keeps the tab bar clear of the Android system navigation bar
+  // Keeps the tab bar clear of the Android system navigation bar.
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -56,7 +65,13 @@ function MainTabs() {
         },
         tabBarIcon: ({ focused, color }) => {
           const [active, inactive] = TAB_ICONS[route.name];
-          return <Ionicons name={focused ? active : inactive} size={24} color={color} />;
+          return (
+            <Ionicons
+              name={focused ? active : inactive}
+              size={24}
+              color={color}
+            />
+          );
         },
       })}
     >
@@ -76,18 +91,56 @@ const headerOptions = {
   headerShadowVisible: false,
 };
 
+const noHeader = {
+  headerShown: false,
+  animation: 'fade',
+  gestureEnabled: false,
+};
+
 export default function AppNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator initialRouteName="Splash" screenOptions={{ animation: 'slide_from_right' }}>
-        {/* Splash/Onboarding use replace() and disable gestures so Back never returns to them. */}
-        <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} options={{ ...headerOptions, title: 'Alert Details' }} />
-        <Stack.Screen name="ContactForm" component={ContactFormScreen} options={{ ...headerOptions, title: 'Contact' }} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ ...headerOptions, title: 'Notifications' }} />
-        <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...headerOptions, title: 'Profile' }} />
+      <Stack.Navigator
+        initialRouteName="Splash"
+        screenOptions={{ animation: 'slide_from_right' }}
+      >
+        {/* Splash and Onboarding use replace(), so Back skips them. */}
+        <Stack.Screen
+          name="Splash"
+          component={SplashScreen}
+          options={noHeader}
+        />
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={noHeader}
+        />
+        <Stack.Screen name="Main" component={MainTabs} options={noHeader} />
+        <Stack.Screen
+          name="AlertDetails"
+          component={AlertDetailsScreen}
+          options={{ ...headerOptions, title: 'Alert Details' }}
+        />
+        <Stack.Screen
+          name="ContactForm"
+          component={ContactFormScreen}
+          options={{ ...headerOptions, title: 'Contact' }}
+        />
+        <Stack.Screen
+          name="Notifications"
+          component={NotificationsScreen}
+          options={{ ...headerOptions, title: 'Notifications' }}
+        />
+        <Stack.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ ...headerOptions, title: 'Profile' }}
+        />
+        <Stack.Screen
+          name="SelectHelmet"
+          component={SelectHelmetScreen}
+          options={{ ...headerOptions, title: 'Select helmet' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
