@@ -17,6 +17,7 @@
       "$deviceId": {
         ".read": "auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true",
         "$alertId": {
+          ".read": "auth != null && (root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true || auth.token.device_id === $deviceId)",
           ".write": "auth != null && auth.token.device_id === $deviceId && !data.exists()",
           ".validate": "newData.hasChildren(['timestamp', 'status']) && ((auth.token.device_id === $deviceId && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent')) || (auth != null && root.child('deviceOwners').child($deviceId).child(auth.uid).val() === true && (newData.child('status').val() === 'new' || newData.child('status').val() === 'sent' || newData.child('status').val() === 'resolved')))",
           "timestamp": {

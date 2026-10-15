@@ -39,7 +39,7 @@ npm --prefix functions install
 npx firebase-tools deploy --only database,functions
 ```
 
-The rules deny access by default. Signed-in app users can access only `users/{theirUid}/...`. Helmet data is readable only by owners explicitly provisioned at `deviceOwners/{deviceId}/{uid}`. The helmet can write device and alert fields only when its Firebase ID token contains the custom claim `device_id` matching that device's ID. Admin SDK access used by Cloud Functions and the provisioning script bypasses these client rules.
+The rules deny access by default. Signed-in app users can access only `users/{theirUid}/...`. Owners explicitly provisioned at `deviceOwners/{deviceId}/{uid}` can read that helmet's telemetry and alerts. The helmet identity, whose Firebase ID token has the custom claim `device_id` matching its device ID, can write its telemetry/alerts and read only one exact alert record to recover an interrupted upload; it cannot list telemetry or alert history. Admin SDK access used by Cloud Functions and the provisioning script bypasses these client rules.
 
 Do not restore public `.read` or `.write` rules for development. Use demo mode or the Firebase Emulator Suite instead.
 
@@ -92,7 +92,15 @@ Device shape: `deviceId`, `helmetStatus`, `accidentStatus`, `latitude`, `longitu
 
 Alert shape: `timestamp`, `severity`, `latitude`, `longitude`, `gpsValid`, `status`, `smsStatus`, and `deviceId`. `status` is `new`, `sent`, or `resolved`; `smsStatus` is `pending`, `confirmed`, `failed`, or `unknown`. Viewing an alert never changes its status. The only app-side alert write allowed by the rules is setting its status to `resolved`.
 
-The app's emergency contacts are **not** written to the helmet's SMS recipient. Firmware SMS delivery and contact synchronization remain separate hardware/backend work.
+The app's emergency contacts are **not** written to the helmet's SMS recipient. Firmware uses the separately configured `SMS_RECIPIENT_E164` number; changing contacts in the app does not change that device setting.
+
+## 5. ESP32 firmware (prototype)
+
+The Arduino IDE reference firmware is in `firmware/KavachHelmet/`. It targets ESP32 + MPU6050 + NEO-6M GPS + SIM900A and writes the `devices/{deviceId}` and `alerts/{deviceId}/{alertId}` records above. Follow its README for wiring, Arduino libraries, local `config.h`, provisioning-token entry over USB serial, and test steps.
+
+The firmware's SMS destination is configured locally as `SMS_RECIPIENT_E164`; it is not synced from app contacts. The SIM900A only reports SMS submission acceptance, not delivery, so the reference firmware reports `smsStatus: "unknown"` unless the modem rejects the send (`"failed"`). The impact threshold is an uncalibrated prototype default, not a validated accident-detection threshold.
+
+Do not use this prototype as a safety-certified emergency system. Hardware behavior, power stability, carrier 2G support, impact false-positive/false-negative rates, token storage, alert persistence during outages, and actual SMS delivery need testing on the assembled device. The sketch persists and retries one pending alert; additional impacts while one remains pending are not queued. ESP32 NVS is not encrypted by this sketch.
 
 ## Push notification flow
 

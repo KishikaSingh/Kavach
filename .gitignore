@@ -48,3 +48,6 @@ yarn-error.*
 # env / secrets
 .env
 .env.local
+
+# Local ESP32 firmware configuration
+/firmware/KavachHelmet/config.h

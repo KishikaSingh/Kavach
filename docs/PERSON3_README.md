@@ -56,3 +56,9 @@ Until then, `EXPO_PUBLIC_DATA_SOURCE=live` shows a clear `LIVE_NOT_CONNECTED` er
 ## Tests
 
 Services, utils and scenarios were tested in Node (7 tests passing, including live mode refusing to fall back to fake data). The React hooks were syntax-checked but not rendered in a test, because the build sandbox could not reach the npm registry. Run the app and open each screen to confirm.
+
+## Firmware (prototype)
+
+The Arduino IDE reference firmware for ESP32 + MPU6050 + SIM900A + NEO-6M lives in `firmware/KavachHelmet/`. It authenticates with the provisioned Firebase custom token, stores the resulting refresh token in ESP32 NVS, writes the app's device/alert schema, and sends SMS to a separately configured number. See that folder's README for wiring, configuration, libraries, and hardware test steps.
+
+This firmware is not calibrated or safety-certified. The accident threshold is a prototype default; only one pending alert is durably queued at a time; and SIM900A send acceptance is not proof of SMS delivery. Test it on actual hardware and a safe impact fixture before relying on it.

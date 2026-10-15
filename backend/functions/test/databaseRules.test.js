@@ -78,6 +78,9 @@ test('allows the provisioned helmet identity to report data but not resolve aler
   const secondAlert = { ...validAlert, status: 'new' };
 
   await assertFails(get(ref(database, `devices/${deviceId}`)));
+  await assertFails(get(ref(database, `alerts/${deviceId}`)));
+  await assertSucceeds(get(ref(database, `alerts/${deviceId}/existing-alert`)));
+  await assertFails(get(ref(database, 'alerts/OTHER_HELMET/existing-alert')));
   await assertSucceeds(set(ref(database, `devices/${deviceId}`), validDevice));
   await assertSucceeds(set(ref(database, `alerts/${deviceId}/new-alert`), secondAlert));
   await assertSucceeds(update(ref(database, `alerts/${deviceId}/new-alert`), { smsStatus: 'confirmed' }));
