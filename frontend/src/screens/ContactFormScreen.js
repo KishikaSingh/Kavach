@@ -31,6 +31,8 @@ export function ContactFormScreen({ route, navigation }) {
 
   useEffect(() => {
     if (!existing) return;
+    // The contact arrives asynchronously; copy it once when edit mode loads.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(existing.name);
     setPhone(existing.phone);
   }, [existing]);

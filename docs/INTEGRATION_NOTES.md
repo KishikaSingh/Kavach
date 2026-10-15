@@ -1,16 +1,20 @@
-# Integration notes (Person 3)
+# Integration notes
 
-Merged: Person 1 shell (feat/shell-ui) + Person 2 screens/Firebase (feat/screens-backend) + Person 3 data layer.
+The current repository is organized into `frontend/` (Expo app) and `backend/` (Firebase rules and Cloud Functions). The Person 2 implementation is connected to the shared hooks through `frontend/src/services/liveAdapter.js`.
 
-Changes made to make them fit:
-- Hooks (src/hooks/use*.js): added `export default` next to the named export, so Person 1's default imports and Person 2's named imports both work. Person 1's temp stubs (tempMock/tempStore + stub hooks) are removed.
-- Person 2 screens (Location, Alerts, AlertDetails, Contacts, ContactForm): added `export default` so AppNavigator needs no change.
-- utils/formatTime.js and utils/deviceStatus.js: union of Person 1 helpers (timeAgo, isOlderThan, hasValidCoords, getGpsState, GPS_LABELS, smsLabel...) and Person 3 helpers (relativeTime, ageMs, deriveDevice).
-- services/liveAdapter.js: getLiveBackend() now returns Person 2's firebaseService.js.
-- ALERT PATH FIX (needs Person 2's OK): firmware writes /alerts/{deviceId}/{alertId}. firebaseService.js now reads/writes `alerts/${DEVICE_ID}`, database.rules.json has alerts/$deviceId/$alertId, and the Cloud Function trigger is /alerts/{deviceId}/{alertId}.
-- package.json: added firebase, expo-notifications, expo-device. .gitignore: .env.
+## Person 2 integration
 
-Open items:
-- notificationService.initPushNotifications() is not called anywhere yet (Person 1 App.js / Person 2).
-- Rules are fully open (.write: true). Fine for the demo, lock down before real use.
-- contacts/notifications/settings are flat (no per-user path) in Person 2's service.
+- Live Firebase uses persistent anonymous Authentication. Contacts, settings, notifications, and Expo push tokens are scoped to `users/{uid}`.
+- Owner reads of helmet telemetry/alerts require an admin-provisioned `deviceOwners/{deviceId}/{uid}` entry. The device identity, authenticated with a custom `device_id` claim, can read only an exact alert record for retry recovery and can write its own device/alert data; `backend/functions/scripts/provision-device.js` creates the device identity and owner grant.
+- The alert-created Cloud Function writes an in-app notification and sends an Expo push only for owners with push enabled. Expo tickets and delivery receipts are tracked; invalid device tokens are removed.
+- Push response taps route to `AlertDetails`. Expo push setup requires an EAS project ID and native push credentials; see `backend/firebase/SETUP.md`.
+- `backend/firebase/database.rules.json` denies unauthenticated and cross-user access. Admin SDK provisioning and Cloud Functions are the only writers to owner mappings, push receipts, and dispatch records.
+
+## Remaining integration dependencies
+
+- The Arduino IDE reference firmware for ESP32 + MPU6050 + SIM900A + NEO-6M is in `firmware/KavachHelmet/`. It matches the current device/alert schema and custom-claim provisioning flow, but remains prototype code until compiled and tested on the exact hardware, calibrated, and verified end-to-end.
+- The reference firmware has a configurable fixed SMS recipient; it does not sync app contacts. SIM900A submission acceptance is not delivery confirmation, so it reports SMS status as `unknown` unless submission fails. One pending alert is persisted and retried; further impacts while it is pending are not queued.
+- The default impact threshold is uncalibrated. Do not use the firmware as a certified safety device; characterize false positives/negatives on a safe test fixture before field trials.
+- The app does not yet provide helmet pairing or account recovery. Anonymous data belongs to one app installation.
+- Contacts saved in the app do not alter the helmet's SMS recipient.
+- Run the app on a development build and test with a real Firebase project and a provisioned device before treating push or telemetry as production-ready.

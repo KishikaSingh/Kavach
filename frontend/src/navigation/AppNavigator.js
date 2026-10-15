@@ -1,14 +1,15 @@
 // Owned by Person 1 (only P1 edits this file).
 // Flow: Splash -> Onboarding (first launch only) -> Main (bottom tabs).
 // Stack screens above the tabs: AlertDetails, ContactForm, Notifications, Profile.
-import React from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { createNavigationContainerRef, NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../constants/theme';
+import { initPushNotifications, stopPushNotifications } from '../services/notificationService.js';
 
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -25,6 +26,19 @@ import ContactFormScreen from '../screens/ContactFormScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+export const navigationRef = createNavigationContainerRef();
+
+let pendingAlertId = null;
+let pushInitializationStarted = false;
+
+function openAlertFromPush({ alertId }) {
+  if (!alertId) return;
+  if (navigationRef.isReady()) {
+    navigationRef.navigate('AlertDetails', { alertId });
+  } else {
+    pendingAlertId = alertId;
+  }
+}
 
 const navTheme = {
   ...DefaultTheme,
@@ -77,8 +91,32 @@ const headerOptions = {
 };
 
 export default function AppNavigator() {
+  useEffect(() => {
+    return stopPushNotifications;
+  }, []);
+
+  const initializePushAfterOnboarding = () => {
+    if (pushInitializationStarted || navigationRef.getCurrentRoute()?.name !== 'Main') return;
+    pushInitializationStarted = true;
+    initPushNotifications({ onAccidentAlertTap: openAlertFromPush })
+      .then((result) => {
+        if (result.reason) console.info(`Push notifications unavailable: ${result.reason}`);
+        else if (result.permission === 'denied') console.info('Push notification permission was not granted.');
+      })
+      .catch((error) => console.error('Could not initialize push notifications.', error));
+  };
+
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navTheme}
+      onStateChange={initializePushAfterOnboarding}
+      onReady={() => {
+        if (!pendingAlertId) return;
+        navigationRef.navigate('AlertDetails', { alertId: pendingAlertId });
+        pendingAlertId = null;
+      }}
+    >
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ animation: 'slide_from_right' }}>
         {/* Splash/Onboarding use replace() and disable gestures so Back never returns to them. */}
         <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />

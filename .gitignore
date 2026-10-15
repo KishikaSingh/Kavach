@@ -41,7 +41,13 @@ yarn-error.*
 /android
 .env
 .env.*
+.firebase/
+*.service-account.json
+*firebase-adminsdk-*.json
 
 # env / secrets
 .env
 .env.local
+
+# Local ESP32 firmware configuration
+/firmware/KavachHelmet/config.h

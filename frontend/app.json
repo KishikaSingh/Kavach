@@ -5,6 +5,7 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "plugins": ["expo-notifications", "expo-font"],
     "android": {
       "package": "com.smarthelmet.app",
       "softwareKeyboardLayoutMode": "resize"
