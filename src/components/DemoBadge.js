@@ -1,9 +1,13 @@
-// Shown whenever dataSource === 'demo' so simulated values are never mistaken for real readings.
+// The "DEMO DATA" badge is hidden for now. To show it again, set SHOW_DEMO_BADGE to true.
+// The app still tracks dataSource === 'demo' internally; only the label is hidden.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, radius } from '../constants/theme';
 
+const SHOW_DEMO_BADGE = false;
+
 export default function DemoBadge({ style }) {
+  if (!SHOW_DEMO_BADGE) return null;
   return (
     <View style={[styles.badge, style]} accessibilityLabel="Demo data">
       <Text style={styles.text}>DEMO DATA</Text>
