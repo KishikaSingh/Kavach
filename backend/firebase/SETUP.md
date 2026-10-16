@@ -109,3 +109,16 @@ The app requests permission, obtains an `ExpoPushToken` for the configured EAS p
 Expo Push Service bridges FCM and APNs, avoiding the invalid assumption that an Expo token can be sent directly with Firebase Admin's FCM API. The function retries transient send failures, records push tickets, and a scheduled function checks receipts every 15 minutes and removes tokens reported as unregistered. Deploying that scheduled receipt checker requires a billing-enabled Firebase/Google Cloud project and Cloud Scheduler.
 
 Expo push credentials still need to be configured in EAS for each platform. A successful push ticket means Expo accepted the message, not that the phone displayed it; use the receipt checker and test on a development build.
+
+## End-to-end integration smoke test
+
+After deploying to a dedicated test Firebase project and setting up the development build:
+
+1. Start the app in live mode and confirm an anonymous Auth user appears. Record its UID and provision that UID for the matching `EXPO_PUBLIC_DEVICE_ID`.
+2. Configure the firmware's local `config.h`, flash the ESP32, and provision the one-time token through the USB serial monitor. Confirm the serial output shows Wi-Fi and Firebase authentication.
+3. Confirm fresh telemetry appears in the app within 30 seconds. Move the GPS outdoors for a valid fix, then verify that removing the fix stops the app from displaying coordinates.
+4. Trigger a test alert only using a safe fixture. Confirm one alert record appears, the app displays it, the Cloud Function creates the owner's inbox notification, and an opted-in development build receives a push.
+5. Confirm the configured SIM900A recipient receives the SMS. Treat the app's SMS status as `unknown` after modem acceptance; do not treat network submission as proof of delivery.
+6. Restart the device while an alert is queued and verify it retries without creating duplicate alert records or sending a duplicate SMS. Also test Wi-Fi loss, GSM registration loss, and GPS unavailability.
+
+Use test phone numbers and a non-production Firebase project for this check. Do not test impact detection by striking a helmet worn by a person. Record the board/module revisions, wiring, power supply, firmware configuration (excluding credentials), and results so the impact thresholds and hardware assumptions can be reviewed.
