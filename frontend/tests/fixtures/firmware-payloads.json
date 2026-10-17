@@ -1,0 +1,9 @@
+{
+  "device": {"deviceId":"HELMET_001","helmetStatus":"connected","accidentStatus":"normal","latitude":28.669200,"longitude":77.453800,"gpsValid":true,"gpsLastFixAt":"2026-10-11T11:42:00Z","gsmRegistered":true,"mpuOk":true,"batteryLevel":null,"alcoholDetected":null,"lastUpdated":"2026-10-11T11:42:05Z"},
+  "deviceNoGps": {"deviceId":"HELMET_001","helmetStatus":"connected","accidentStatus":"warning","latitude":null,"longitude":null,"gpsValid":false,"gpsLastFixAt":null,"gsmRegistered":true,"mpuOk":true,"batteryLevel":null,"alcoholDetected":null,"lastUpdated":"2026-10-11T11:42:05Z"},
+  "alertCreate": {"timestamp":"2026-10-11T11:42:05Z","severity":"high","latitude":28.669200,"longitude":77.453800,"gpsValid":true,"status":"new","smsStatus":"pending"},
+  "alertCreateNoGps": {"timestamp":"2026-10-11T11:42:05Z","severity":"high","latitude":null,"longitude":null,"gpsValid":false,"status":"new","smsStatus":"pending"},
+  "alertPatchSent": {"status":"sent","smsStatus":"pending"},
+  "alertPatchConfirmed": {"status":"sent","smsStatus":"confirmed"},
+  "alertPatchFailed": {"status":"new","smsStatus":"failed"}
+}
