@@ -10,6 +10,7 @@ export default function App() {
       <StatusBar style="dark" />
       <DemoControlsBar />
       <AppNavigator />
+      <DemoControlsBar />
     </SafeAreaProvider>
   );
 }

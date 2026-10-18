@@ -1,0 +1,40 @@
+#pragma once
+// Copy this file to config.h and fill in your values. config.h is gitignored: never commit it.
+
+// ---- Wi-Fi (the helmet uploads telemetry over Wi-Fi, e.g. your phone's hotspot) ----
+#define WIFI_SSID        "your-hotspot-name"
+#define WIFI_PASSWORD    "your-hotspot-password"
+
+// ---- Firebase (public project settings; the device signs in with its own account) ----
+// Realtime Database URL host WITHOUT https:// and without a trailing slash,
+// e.g. "my-project-default-rtdb.firebaseio.com"
+#define FIREBASE_HOST    "your-project-default-rtdb.firebaseio.com"
+#define FIREBASE_API_KEY "your-web-api-key"
+// Create one email/password user for the helmet in Firebase Authentication.
+// Person 2's security rules must allow this user to write only /devices/{deviceId} and /alerts/{deviceId}.
+#define DEVICE_EMAIL     "helmet-001@example.com"
+#define DEVICE_PASSWORD  "change-me"
+
+// Must match the deviceId the app uses (frozen Firebase layout).
+#define DEVICE_ID        "HELMET_001"
+
+// ---- Emergency SMS recipient (E.164, e.g. +919876543210) ----
+// The app cannot change this unless contact synchronization is built.
+#define EMERGENCY_NUMBER_1  "+910000000000"
+#define EMERGENCY_NUMBER_2  ""            // optional second number, leave empty to disable
+
+// ---- Accident detection ----
+#define IMPACT_THRESHOLD_G   3.5f   // acceleration (in g) that counts as an impact
+#define WARNING_THRESHOLD_G  2.0f   // acceleration that shows "warning" in the app
+#define IMPACT_MIN_SAMPLES   3      // consecutive samples above the threshold (at ~100 Hz)
+#define COOLDOWN_MS          60000  // after an accident, ignore new triggers for this long
+#define CANCEL_WINDOW_MS     10000  // rider can press the button to cancel a false alarm
+
+// ---- Upload behaviour ----
+#define TELEMETRY_INTERVAL_MS 3000  // how often /devices/{deviceId} is updated
+#define ALERT_RETRY_MS        5000  // retry interval for failed alert uploads
+
+// TLS: 1 = skip certificate checks (easy for a prototype, NOT secure against attackers on the
+// network). For a real deployment set to 0 and paste the Google root certificate into FIREBASE_ROOT_CA.
+#define USE_INSECURE_TLS 1
+// #define FIREBASE_ROOT_CA "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n"

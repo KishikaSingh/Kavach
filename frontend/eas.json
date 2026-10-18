@@ -1,0 +1,17 @@
+{
+  "cli": { "version": ">= 12.0.0", "appVersionSource": "remote" },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_DATA_SOURCE": "demo" }
+    },
+    "preview-live": {
+      "extends": "preview",
+      "env": { "EXPO_PUBLIC_DATA_SOURCE": "live" }
+    },
+    "production": {
+      "android": { "buildType": "app-bundle" }
+    }
+  }
+}

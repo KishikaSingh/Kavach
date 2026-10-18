@@ -51,3 +51,9 @@ yarn-error.*
 
 # Local ESP32 firmware configuration
 /firmware/KavachHelmet/config.h
+
+# test output
+.test-build/
+
+# keep the template (a ".env.*" rule would hide it)
+!.env.example

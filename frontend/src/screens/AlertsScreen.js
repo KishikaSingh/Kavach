@@ -6,6 +6,7 @@ import { useDevice } from '../hooks/useDevice.js';
 import { AccidentAlertCard } from '../components/AccidentAlertCard.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
 import { colors, space, type } from '../components/person2Theme.js';
+import ScreenContainer from '../components/ScreenContainer.js';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
 const FILTERS = [
@@ -37,7 +38,7 @@ export function AlertsScreen({ navigation }) {
   if (error && !alerts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer style={styles.screen} onRefresh={refresh} refreshing={refreshing}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
