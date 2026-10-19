@@ -5,7 +5,7 @@ import { useDemoControls } from '../hooks/useDemoControls.js';
 import { useDevice } from '../hooks/useDevice.js';
 import { LocationPreview } from '../components/LocationPreview.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
-import { colors, space, type } from '../constants/theme.js';
+import { colors, space, type } from '../components/person2Theme.js';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
