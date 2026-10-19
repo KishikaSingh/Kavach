@@ -16,7 +16,9 @@ import { colors, radius, shadows, spacing, typography } from '../constants/theme
 
 export default function ProfileScreen({ navigation }) {
   const { device, dataSource } = useDevice();
-  const { settings, updateSettings } = useSettings();
+  const { settings: loadedSettings, updateSettings } = useSettings();
+  // settings arrive asynchronously; use safe defaults until then so the screen never reads from null.
+  const settings = loadedSettings || { accidentThreshold: null, notifications: { push: false, sound: false } };
   const { contacts } = useContacts();
   const version = Constants.expoConfig?.version || 'Unknown';
 

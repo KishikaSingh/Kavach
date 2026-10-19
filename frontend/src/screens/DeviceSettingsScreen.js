@@ -20,7 +20,9 @@ import { getGpsState, GPS_LABELS } from '../utils/deviceStatus';
 
 export default function DeviceSettingsScreen() {
   const { device, dataSource, backendReachable, loading, error, refresh } = useDevice();
-  const { settings, updateSettings } = useSettings();
+  const { settings: loadedSettings, updateSettings } = useSettings();
+  // settings arrive asynchronously; use safe defaults until then so the screen never reads from null.
+  const settings = loadedSettings || { accidentThreshold: null, notifications: { push: false, sound: false } };
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
