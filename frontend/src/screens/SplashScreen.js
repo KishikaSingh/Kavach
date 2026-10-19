@@ -9,8 +9,8 @@ import { colors, spacing } from '../constants/theme';
 export const ONBOARDING_KEY = 'onboardingComplete';
 
 export default function SplashScreen({ navigation }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.8)).current;
+  const opacity = useRef(new Animated.Value(0));
+  const scale = useRef(new Animated.Value(0.8));
 
   useEffect(() => {
     Animated.parallel([

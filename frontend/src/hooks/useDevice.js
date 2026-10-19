@@ -17,7 +17,7 @@ export function useDevice() {
   const appSub = useSubscription(subscribeApp);
 
   // Re-evaluate staleness every 5 s even if no new data arrives.
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(id);

@@ -10,7 +10,7 @@ export default function ErrorState({ message = 'Something went wrong.', onRetry 
       <View style={styles.iconWrap}>
         <Ionicons name="warning-outline" size={30} color={colors.red} />
       </View>
-      <Text style={styles.title}>Couldn't load data</Text>
+      <Text style={styles.title}>Couldn&apos;t load data</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry ? <AppButton title="Retry" icon="refresh" onPress={onRetry} style={styles.btn} /> : null}
     </View>
