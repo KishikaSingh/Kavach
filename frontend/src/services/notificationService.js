@@ -43,6 +43,7 @@ export async function initPushNotifications({ onAccidentAlertTap } = {}) {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'Emergency alerts',
+      // eslint-disable-next-line import/namespace
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#D32F2F',

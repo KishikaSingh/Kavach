@@ -85,7 +85,7 @@ export function AlertsScreen({ navigation }) {
         }
         renderItem={({ item }) => <AccidentAlertCard alert={item} onPress={openDetails} />}
       />
-    </View>
+    </ScreenContainer>
   );
 }
 
