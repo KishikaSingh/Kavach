@@ -9,7 +9,9 @@ export function useSubscription(subscribe) {
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
 
-useEffect(() => {
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
     const unsubscribe = subscribe(
       (value) => {
         setData(value);

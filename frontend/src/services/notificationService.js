@@ -1,19 +1,31 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { DATA_SOURCE } from '../config.js';
 
 let tapHandler = null;
 let responseSubscription = null;
 
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: notification.request.content.sound != null,
-    shouldSetBadge: true,
-  }),
-});
+// expo-notifications is loaded lazily: Expo Go does not ship its native module, and a top-level import
+// would crash the whole app at start-up ("Cannot find native module ..."). Push works in the built APK.
+let notificationsModule;
+function loadNotifications() {
+  if (notificationsModule !== undefined) return notificationsModule;
+  try {
+    notificationsModule = require('expo-notifications');
+    notificationsModule.setNotificationHandler({
+      handleNotification: async (notification) => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: notification.request.content.sound != null,
+        shouldSetBadge: true,
+      }),
+    });
+  } catch (error) {
+    console.warn('expo-notifications is not available in this app build; push notifications are disabled.', error?.message || error);
+    notificationsModule = null;
+  }
+  return notificationsModule;
+}
 
 export function setAccidentAlertTapHandler(handler) {
   tapHandler = typeof handler === 'function' ? handler : null;
@@ -36,6 +48,11 @@ export async function initPushNotifications({ onAccidentAlertTap } = {}) {
   }
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     return { available: false, reason: `Remote push notifications are not supported on ${Platform.OS}.` };
+  }
+
+  const Notifications = loadNotifications();
+  if (!Notifications) {
+    return { available: false, reason: 'Push notifications are not supported in this build (for example Expo Go). Use the APK.' };
   }
 
   if (onAccidentAlertTap) setAccidentAlertTapHandler(onAccidentAlertTap);
@@ -82,6 +99,8 @@ export async function getPushPermissionStatus() {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     return { available: false, status: 'unavailable' };
   }
+  const Notifications = loadNotifications();
+  if (!Notifications) return { available: false, status: 'unavailable' };
   const permissions = await Notifications.getPermissionsAsync();
   return {
     available: true,
