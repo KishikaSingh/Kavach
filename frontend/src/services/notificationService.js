@@ -1,19 +1,25 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { DATA_SOURCE } from '../config.js';
 
 let tapHandler = null;
 let responseSubscription = null;
+let notificationsModule = null;
 
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: notification.request.content.sound != null,
-    shouldSetBadge: true,
-  }),
-});
+function getNotifications() {
+  if (!notificationsModule) {
+    notificationsModule = require('expo-notifications');
+    notificationsModule.setNotificationHandler({
+      handleNotification: async (notification) => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: notification.request.content.sound != null,
+        shouldSetBadge: true,
+      }),
+    });
+  }
+  return notificationsModule;
+}
 
 export function setAccidentAlertTapHandler(handler) {
   tapHandler = typeof handler === 'function' ? handler : null;
@@ -37,6 +43,11 @@ export async function initPushNotifications({ onAccidentAlertTap } = {}) {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     return { available: false, reason: `Remote push notifications are not supported on ${Platform.OS}.` };
   }
+  if (Constants.expoGoConfig) {
+    return { available: false, reason: 'Remote push notifications require a development build.' };
+  }
+
+  const Notifications = getNotifications();
 
   if (onAccidentAlertTap) setAccidentAlertTapHandler(onAccidentAlertTap);
 
@@ -82,6 +93,8 @@ export async function getPushPermissionStatus() {
   if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
     return { available: false, status: 'unavailable' };
   }
+  if (Constants.expoGoConfig) return { available: false, status: 'unavailable' };
+  const Notifications = getNotifications();
   const permissions = await Notifications.getPermissionsAsync();
   return {
     available: true,

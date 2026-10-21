@@ -78,6 +78,12 @@ test('package.json has the scripts and tools the team relies on', () => {
   assert.ok((pkg.devDependencies || {}).esbuild, 'esbuild (used by npm test)');
 });
 
+test('mock data is opt-in and alerts do not nest virtualized lists', () => {
+  assert.match(read('src/config.js'), /EXPO_PUBLIC_DATA_SOURCE === 'demo' \? 'demo' : 'live'/);
+  assert.match(read('src/screens/AlertsScreen.js'), /<ScreenContainer[^>]*scroll=\{false\}/);
+  assert.doesNotMatch(read('src/services/notificationService.js'), /import \* as Notifications from 'expo-notifications'/);
+});
+
 test('Firebase rules, Cloud Function, app and firmware use the same alert path', () => {
   const rules = json('../backend/firebase/database.rules.json').rules;
   assert.ok(rules.alerts.$deviceId && rules.alerts.$deviceId.$alertId, 'rules: alerts/$deviceId/$alertId');

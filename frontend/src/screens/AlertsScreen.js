@@ -38,7 +38,7 @@ export function AlertsScreen({ navigation }) {
   if (error && !alerts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
-    <ScreenContainer style={styles.screen} onRefresh={refresh} refreshing={refreshing}>
+    <ScreenContainer style={styles.screen} scroll={false}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}

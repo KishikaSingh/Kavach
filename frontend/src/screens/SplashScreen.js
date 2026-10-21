@@ -1,6 +1,6 @@
 // Logo + project name with a short fade/scale animation, then routes to Onboarding (first launch)
 // or straight to the tabs. Uses replace() so Back never returns here.
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,8 +9,8 @@ import { colors, spacing } from '../constants/theme';
 export const ONBOARDING_KEY = 'onboardingComplete';
 
 export default function SplashScreen({ navigation }) {
-  const opacity = useRef(new Animated.Value(0));
-  const scale = useRef(new Animated.Value(0.8));
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [scale] = useState(() => new Animated.Value(0.8));
 
   useEffect(() => {
     Animated.parallel([
@@ -23,7 +23,7 @@ export default function SplashScreen({ navigation }) {
       let done = null;
       try {
         done = await AsyncStorage.getItem(ONBOARDING_KEY);
-      } catch (e) {
+      } catch {
         // If storage fails, fall back to showing onboarding.
       }
       if (!cancelled) navigation.replace(done === 'true' ? 'Main' : 'Onboarding');

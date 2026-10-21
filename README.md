@@ -20,7 +20,7 @@ Firebase  --->  Mobile app (this repo)  and  web dashboard
    +-- Cloud Function writes an in-app notification and sends a push when a new alert is created
 ```
 
-## Quick start (demo mode, no hardware, no Firebase)
+## Quick start (demo mode, opt-in)
 
 Needs a current Node.js LTS and the **Expo Go** app on an Android phone (same Wi-Fi as the computer).
 
@@ -30,8 +30,8 @@ npm install
 npx expo start -c
 ```
 
-Scan the QR code with Expo Go. The app runs on built-in demo data. A small **Demo** button (bottom-left)
-switches the pretend helmet between situations such as *New accident alert*, *GPS unavailable* and *Helmet offline*.
+To opt into mock data, set `EXPO_PUBLIC_DATA_SOURCE=demo` in `frontend/.env.local`, then scan the QR code with Expo Go.
+A small **Demo** button switches the simulated helmet between situations such as *New accident alert*, *GPS unavailable* and *Helmet offline*.
 Step-by-step demo script: [docs/DEMO_GUIDE.md](docs/DEMO_GUIDE.md).
 
 ## Run the tests
@@ -53,7 +53,7 @@ What `npm test` checks (details in [docs/TESTING.md](docs/TESTING.md)):
 ## Live mode (real Firebase)
 
 1. Set up the Firebase project first (Anonymous sign-in, rules, Functions, device provisioning): [backend/firebase/SETUP.md](backend/firebase/SETUP.md).
-2. In `frontend/`, copy `.env.example` to `.env` and fill the `EXPO_PUBLIC_FIREBASE_*` values. Set `EXPO_PUBLIC_DATA_SOURCE=live`.
+2. In `frontend/`, copy `.env.example` to `.env.local` and fill the `EXPO_PUBLIC_FIREBASE_*` values. Live mode is the default; mock data is only used when `EXPO_PUBLIC_DATA_SOURCE=demo`.
 3. Restart with `npx expo start -c` (environment values are read at start).
 4. The app signs in anonymously; that user must be granted access to the helmet with `provision-device.js` (SETUP.md), otherwise the rules show no data.
 

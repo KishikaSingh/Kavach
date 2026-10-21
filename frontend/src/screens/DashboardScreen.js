@@ -8,9 +8,9 @@ import ScreenContainer from '../components/ScreenContainer';
 import StatusCard from '../components/StatusCard';
 import StatusBadge from '../components/StatusBadge';
 import DemoBadge from '../components/DemoBadge';
-import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
 import AppButton from '../components/AppButton';
+import { StatusBanner } from '../components/ScreenStates.js';
 
 import useDevice from '../hooks/useDevice';
 import useAlerts from '../hooks/useAlerts';
@@ -52,13 +52,6 @@ export default function DashboardScreen({ navigation }) {
   const openAlert = (id) => navigation.navigate('AlertDetails', { alertId: id });
 
   const error = deviceError || alertsError;
-  if (error && !device) {
-    return (
-      <ScreenContainer>
-        <ErrorState message={String(error.message || error)} onRetry={onRefresh} />
-      </ScreenContainer>
-    );
-  }
 
   const connected = device?.helmetStatus === 'connected';
   const accident = ACCIDENT_LABELS[device?.accidentStatus] || { label: 'Unknown', tone: 'grey' };
@@ -109,6 +102,7 @@ export default function DashboardScreen({ navigation }) {
         </Pressable>
       </View>
 
+      {error ? <StatusBanner tone="danger">Live data unavailable: {String(error.message || error)}</StatusBanner> : null}
       {dataSource === 'demo' ? <DemoBadge style={styles.demo} /> : null}
 
       {/* Active emergency */}

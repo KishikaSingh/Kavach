@@ -52,6 +52,10 @@ await build({
 });
 
 const built = entries.map((f) => join(out, relative(join(root, 'tests'), f)));
-const result = spawnSync(process.execPath, ['--test', '--test-reporter=spec', ...built], { stdio: 'inherit', cwd: root });
+const result = spawnSync(process.execPath, ['--test', '--test-reporter=spec', ...built], {
+  stdio: 'inherit',
+  cwd: root,
+  env: { ...process.env, EXPO_PUBLIC_DATA_SOURCE: 'demo' },
+});
 rmSync(out, { recursive: true, force: true });
 process.exit(result.status ?? 1);

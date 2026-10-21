@@ -1,6 +1,6 @@
 # Firebase and push setup
 
-This is the live-backend setup for Person 2's part of the shared contract. The app stays in demo mode unless `EXPO_PUBLIC_DATA_SOURCE=live` is set. Demo mode does not initialize Firebase or request push permissions.
+This is the live-backend setup for Person 2's part of the shared contract. The app uses live mode by default; set `EXPO_PUBLIC_DATA_SOURCE=demo` to opt into mock data. Demo mode does not initialize Firebase or request push permissions.
 
 ## 1. Create the Firebase project
 
