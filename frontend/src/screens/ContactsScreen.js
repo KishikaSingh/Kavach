@@ -3,6 +3,7 @@ import { Alert, FlatList, Linking, Pressable, StyleSheet, Text, View } from 'rea
 import { useContacts } from '../hooks/useContacts.js';
 import { ContactCard } from '../components/ContactCard.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
+import ScreenContainer from '../components/ScreenContainer.js';
 import { colors, space, type } from '../components/person2Theme.js';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
@@ -73,7 +74,7 @@ export function ContactsScreen({ navigation }) {
   if (error && !contacts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
-    <View style={styles.screen}>
+    <ScreenContainer edges={['top']} scroll={false} contentContainerStyle={styles.containerPadding}>
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id}
@@ -123,12 +124,13 @@ export function ContactsScreen({ navigation }) {
           />
         )}
       />
-    </View>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  containerPadding: { padding: 0 },
   content: { padding: space.md, paddingBottom: 40, flexGrow: 1 },
   add: {
     marginVertical: space.md,
@@ -137,6 +139,6 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm,
     alignItems: 'center',
   },
-  addText: { color: colors.text, fontWeight: '700' },
+  addText: { color: '#FFFFFF', fontWeight: '700' },
 });
 export default ContactsScreen;

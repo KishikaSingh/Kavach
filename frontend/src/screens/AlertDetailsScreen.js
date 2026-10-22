@@ -122,7 +122,7 @@ export function AlertDetailsScreen({ route, navigation }) {
         accessibilityLabel={resolved ? 'Alert already resolved' : 'Mark alert as resolved'}
         style={[styles.resolve, (resolved || busy) && styles.disabled]}
       >
-        <Text style={styles.resolveText}>
+        <Text style={[styles.resolveText, (resolved || busy) && styles.disabledText]}>
           {resolved ? 'Already resolved' : busy ? 'Saving…' : 'Mark as resolved'}
         </Text>
       </Pressable>
@@ -142,7 +142,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabled: { backgroundColor: colors.cardAlt },
-  resolveText: { color: colors.text, fontWeight: '700' },
+  resolveText: { color: '#FFFFFF', fontWeight: '700' },
+  disabledText: { color: colors.muted },
 });
 
 export default AlertDetailsScreen;

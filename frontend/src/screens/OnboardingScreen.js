@@ -25,7 +25,7 @@ export default function OnboardingScreen({ navigation }) {
   const finish = async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    } catch (e) {
+    } catch (_e) {
       // Non-fatal: onboarding may show again next launch.
     }
     navigation.replace('Main');

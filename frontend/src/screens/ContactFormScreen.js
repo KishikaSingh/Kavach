@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabled: { opacity: 0.6 },
-  saveText: { color: colors.text, fontWeight: '700' },
+  saveText: { color: '#FFFFFF', fontWeight: '700' },
   delete: { marginTop: space.sm, alignItems: 'center', paddingVertical: space.sm },
   deleteText: { color: colors.danger, fontWeight: '700' },
 });

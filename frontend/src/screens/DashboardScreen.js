@@ -63,7 +63,7 @@ export default function DashboardScreen({ navigation }) {
   const call = async (phone) => {
     try {
       await Linking.openURL(`tel:${phone}`);
-    } catch (e) {
+    } catch (_e) {
       Alert.alert('Unable to call', 'This device cannot place calls.');
     }
   };
@@ -76,7 +76,7 @@ export default function DashboardScreen({ navigation }) {
           <Ionicons name="shield-checkmark" size={22} color={colors.white} />
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.appName}>Smart Helmet</Text>
+          <Text style={styles.appName}>Kavach Smart Helmet</Text>
           <StatusBadge label={connected ? 'Helmet connected' : 'Helmet disconnected'} tone={connected ? 'green' : 'orange'} />
         </View>
         <Pressable

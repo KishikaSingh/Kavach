@@ -41,8 +41,8 @@ export default function SplashScreen({ navigation }) {
         <View style={styles.logo}>
           <Ionicons name="shield-checkmark" size={56} color={colors.white} />
         </View>
-        <Text style={styles.name}>Smart Helmet</Text>
-        <Text style={styles.tagline}>Accident Detection and Emergency Alert System</Text>
+        <Text style={styles.name}>KAVACH</Text>
+        <Text style={styles.tagline}>Smart Helmet · Autonomous Accident Detection & Emergency Dispatch</Text>
       </Animated.View>
     </View>
   );

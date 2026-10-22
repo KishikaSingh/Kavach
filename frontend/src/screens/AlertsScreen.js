@@ -38,7 +38,7 @@ export function AlertsScreen({ navigation }) {
   if (error && !alerts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
-    <ScreenContainer style={styles.screen} scroll={false}>
+    <ScreenContainer style={styles.screen} scroll={false} contentContainerStyle={styles.containerPadding}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
@@ -71,7 +71,7 @@ export function AlertsScreen({ navigation }) {
                   accessibilityLabel={`Filter ${f.label}`}
                   style={[styles.chip, filter === f.id && styles.chipOn]}
                 >
-                  <Text style={styles.chipText}>{f.label}</Text>
+                  <Text style={[styles.chipText, filter === f.id && styles.chipTextOn]}>{f.label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -91,6 +91,7 @@ export function AlertsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
+  containerPadding: { padding: 0 },
   content: { padding: space.md, paddingBottom: 40, flexGrow: 1 },
   filters: { flexDirection: 'row', gap: 8, marginBottom: space.md, marginTop: space.sm },
   chip: {
@@ -103,5 +104,6 @@ const styles = StyleSheet.create({
   },
   chipOn: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text, fontWeight: '700' },
+  chipTextOn: { color: '#FFFFFF' },
 });
 export default AlertsScreen;
