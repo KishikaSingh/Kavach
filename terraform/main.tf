@@ -1,69 +1,43 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
+# ==============================================================================
+# Kavach Smart Helmet — Root Terraform Configuration
+#
+# Architecture: Firebase Cloud Function → AWS SNS → Emergency contact phones
+#
+# Resource ownership by module:
+#   module.sns         — SNS SMS account preferences + operator notification topic
+#   module.security    — IAM policy for the existing SNS dispatcher IAM user
+#   module.observability — CloudWatch log groups + optional failure alarms
+#
+# What this configuration does NOT manage:
+#   - IAM user creation (user "kavach" exists; created outside Terraform).
+#   - IAM access keys (never stored in Terraform state — rotate via AWS Console/CLI).
+#   - Firebase project (managed via Firebase Console and firebase-tools CLI).
+#   - ESP32 firmware config.h (provisioned per-device, gitignored).
+# ==============================================================================
+
+module "sns" {
+  source = "./modules/sns"
+
+  resource_prefix         = local.resource_prefix
+  sms_type                = var.sns_sms_type
+  monthly_spend_limit_usd = var.sns_monthly_spend_limit_usd
+  operator_alert_emails   = var.emergency_alert_emails
 }
 
-provider "aws" {
-  region = var.aws_region
+module "security" {
+  source = "./modules/security"
+
+  resource_prefix = local.resource_prefix
+  iam_user_name   = var.iam_user_name
+  aws_region      = var.aws_region
 }
 
-# 1. Amazon SNS Topic for Emergency Alerts
-resource "aws_sns_topic" "emergency_alerts" {
-  name         = "kavach-emergency-alerts"
-  display_name = "Kavach Alert"
+module "observability" {
+  source = "./modules/observability"
 
-  tags = {
-    Project     = "Kavach"
-    Environment = "production"
-    ManagedBy   = "Terraform"
-  }
-}
-
-# 2. Subscribe emergency email addresses to the SNS Topic
-resource "aws_sns_topic_subscription" "email_sub" {
-  for_each  = toset(var.emergency_emails)
-  topic_arn = aws_sns_topic.emergency_alerts.arn
-  protocol  = "email"
-  endpoint  = each.value
-}
-
-# 3. IAM User dedicated to Firebase Cloud Function SNS dispatch
-resource "aws_iam_user" "firebase_sns_user" {
-  name = var.iam_user_name
-
-  tags = {
-    Project     = "Kavach"
-    Environment = "production"
-    ManagedBy   = "Terraform"
-  }
-}
-
-# 4. Strict least-privilege policy: allow publishing to this SNS Topic
-resource "aws_iam_user_policy" "sns_publish_policy" {
-  name = "KavachEmergencySnsPublishPolicy"
-  user = aws_iam_user.firebase_sns_user.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowPublishToKavachTopic"
-        Effect = "Allow"
-        Action = [
-          "sns:Publish"
-        ]
-        Resource = aws_sns_topic.emergency_alerts.arn
-      }
-    ]
-  })
-}
-
-# 5. Create access key pair for Firebase to authenticate with AWS
-resource "aws_iam_access_key" "firebase_sns_key" {
-  user = aws_iam_user.firebase_sns_user.name
+  resource_prefix             = local.resource_prefix
+  log_retention_days          = var.log_retention_days
+  enable_alarms               = var.enable_cloudwatch_alarms
+  sms_failure_alarm_threshold = 3
+  alarm_topic_arn             = module.sns.operator_topic_arn
 }

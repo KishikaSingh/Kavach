@@ -1,0 +1,20 @@
+# ==============================================================================
+# Staging Environment Variables Example
+# Copy to staging.tfvars (gitignored) and customize:
+#   terraform apply -var-file="environments/staging.tfvars"
+# ==============================================================================
+
+project_name               = "kavach"
+environment                = "staging"
+aws_region                 = "ap-south-1"
+iam_user_name              = "kavach"
+sns_sms_type               = "Transactional"
+sns_monthly_spend_limit_usd = 5
+log_retention_days         = 14
+enable_cloudwatch_alarms   = true
+emergency_alert_emails     = ["staging-alerts@kavach-helmet.example.com"]
+
+tags = {
+  Environment = "staging"
+  Owner       = "qa-team"
+}
