@@ -51,32 +51,32 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
   let statusText = 'Not triggered';
 
   if (isSending || status === 'sending') {
-    bannerBg = '#13233F';
+    bannerBg = '#EFF6FF';
     borderColor = colors.primary;
     statusBadgeColor = colors.primary;
     statusText = 'Alerting contacts…';
   } else if (status === 'sent') {
-    bannerBg = '#0E281E';
+    bannerBg = '#E4F6EE';
     borderColor = colors.success;
     statusBadgeColor = colors.success;
     statusText = 'Contacts alerted';
   } else if (status === 'demo_sent') {
-    bannerBg = '#13233F';
+    bannerBg = '#EFF6FF';
     borderColor = colors.primary;
     statusBadgeColor = colors.primary;
     statusText = 'Demo: Contacts alerted (simulated)';
   } else if (status === 'unconfigured') {
-    bannerBg = '#3B2A12';
+    bannerBg = '#FEF3DC';
     borderColor = colors.warning;
     statusBadgeColor = colors.warning;
     statusText = 'SMS gateway unconfigured';
   } else if (status === 'failed') {
-    bannerBg = '#3B1518';
+    bannerBg = '#FDECEC';
     borderColor = colors.danger;
     statusBadgeColor = colors.danger;
     statusText = 'Alert delivery failed';
   } else if (status === 'no_contacts') {
-    bannerBg = '#3B2A12';
+    bannerBg = '#FEF3DC';
     borderColor = colors.warning;
     statusBadgeColor = colors.warning;
     statusText = 'No emergency contacts';
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   buttonText: {
-    color: colors.text,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
   },

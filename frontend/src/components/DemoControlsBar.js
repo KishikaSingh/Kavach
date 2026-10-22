@@ -20,9 +20,9 @@ export default function DemoControlsBar() {
 
   return (
     <View style={styles.bar} accessibilityLabel="Demo Controls Bar">
-      <Text style={styles.label}>Demo: {scenario || 'none'}</Text>
+      <Text style={styles.label}>Demo Mode: <Text style={styles.scenarioName}>{scenario || 'none'}</Text></Text>
       <TouchableOpacity onPress={nextScenario} style={styles.button} accessibilityLabel="Next Demo Scenario">
-        <Text style={styles.buttonText}>Next</Text>
+        <Text style={styles.buttonText}>Next Scenario ➔</Text>
       </TouchableOpacity>
     </View>
   );
@@ -33,25 +33,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.grayLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: colors.greySoft,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderColor: colors.gray,
+    borderColor: colors.border,
   },
   label: {
-    color: colors.black,
-    fontSize: 14,
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  scenarioName: {
+    color: colors.navy,
+    fontWeight: '700',
   },
   button: {
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
     borderRadius: radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   buttonText: {
     color: colors.white,
-    fontWeight: '600',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 12,
   },
 });

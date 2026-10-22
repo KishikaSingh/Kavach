@@ -44,15 +44,22 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
+const BANNER_THEMES = {
+  danger: { bg: '#FDECEC', border: '#FCA5A5', text: '#B91C1C' },
+  warning: { bg: '#FEF3DC', border: '#FCD34D', text: '#B45309' },
+  info: { bg: '#EFF6FF', border: '#BFDBFE', text: '#1D4ED8' },
+  success: { bg: '#E4F6EE', border: '#86EFAC', text: '#15803D' },
+};
+
 export function StatusBanner({ tone = 'warning', children, accessibilityLabel }) {
-  const bg = tone === 'danger' ? '#3B1518' : tone === 'info' ? '#13233F' : '#3B2A12';
+  const theme = BANNER_THEMES[tone] || BANNER_THEMES.warning;
   return (
     <View
-      style={[styles.banner, { backgroundColor: bg }]}
+      style={[styles.banner, { backgroundColor: theme.bg, borderColor: theme.border, borderWidth: 1 }]}
       accessibilityRole="text"
       accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
     >
-      <Text style={type.muted}>{children}</Text>
+      <Text style={[styles.bannerText, { color: theme.text }]}>{children}</Text>
     </View>
   );
 }
@@ -68,6 +75,7 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm,
     borderRadius: 10,
   },
-  buttonText: { color: colors.text, fontWeight: '700' },
+  buttonText: { color: '#FFFFFF', fontWeight: '700' },
   banner: { padding: space.sm, borderRadius: 10, marginBottom: space.sm },
+  bannerText: { fontSize: 13, lineHeight: 18, fontWeight: '500' },
 });

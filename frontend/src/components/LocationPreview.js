@@ -64,7 +64,9 @@ export function LocationPreview({
         accessibilityHint={usable ? 'Opens this coordinate in Google Maps' : 'GPS is not valid so Maps cannot open'}
         style={[styles.mapsBtn, !usable && styles.mapsBtnDisabled]}
       >
-        <Text style={styles.mapsText}>{usable ? 'Open in Google Maps' : 'Open in Maps (unavailable)'}</Text>
+        <Text style={[styles.mapsText, !usable && styles.mapsTextDisabled]}>
+          {usable ? 'Open in Google Maps' : 'Open in Maps (unavailable)'}
+        </Text>
       </Pressable>
     </View>
   );
@@ -89,5 +91,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mapsBtnDisabled: { backgroundColor: colors.cardAlt },
-  mapsText: { color: colors.text, fontWeight: '700' },
+  mapsText: { color: '#FFFFFF', fontWeight: '700' },
+  mapsTextDisabled: { color: colors.muted },
 });

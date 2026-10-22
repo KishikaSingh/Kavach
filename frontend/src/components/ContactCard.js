@@ -51,7 +51,7 @@ function Action({ label, onPress, disabled, danger }) {
       accessibilityState={{ disabled: !!disabled }}
       style={[styles.action, danger && styles.danger, disabled && styles.disabled]}
     >
-      <Text style={styles.actionText}>{label}</Text>
+      <Text style={[styles.actionText, danger && styles.dangerText]}>{label}</Text>
     </Pressable>
   );
 }
@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   badge: { backgroundColor: colors.success, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { color: colors.text, fontSize: 11, fontWeight: '700' },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: space.sm },
   action: {
     backgroundColor: colors.cardAlt,
@@ -75,7 +75,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm,
     paddingVertical: 8,
   },
-  danger: { backgroundColor: '#3B1518' },
+  danger: { backgroundColor: '#FDECEC' },
   disabled: { opacity: 0.5 },
   actionText: { color: colors.text, fontWeight: '600' },
+  dangerText: { color: '#B91C1C' },
 });
