@@ -22,7 +22,12 @@ export default function NotificationItem({ item, demo, onPress }) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${item.title}. ${item.read ? 'Read' : 'Unread'}`}
-      style={[styles.card, shadows.card, !item.read && styles.unread]}
+      style={({ pressed }) => [
+        styles.card,
+        shadows.sm,
+        !item.read && styles.unread,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
         <Ionicons name={meta.icon} size={22} color={t.fg} />
@@ -53,27 +58,71 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     backgroundColor: colors.card,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    minHeight: 64,
+    minHeight: 68,
+    alignItems: 'center',
   },
-  unread: { borderLeftWidth: 3, borderLeftColor: colors.primary },
+  unread: {
+    borderLeftWidth: 4,
+    borderLeftColor: colors.safetyTeal,
+  },
+  pressed: {
+    opacity: 0.9,
+  },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  body: { flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'center' },
-  title: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.navy },
-  titleUnread: { fontWeight: '800' },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginLeft: spacing.sm },
-  text: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  metaRow: { flexDirection: 'row', marginTop: 4 },
-  meta: { fontSize: 11, color: colors.muted },
-  demo: { fontSize: 11, color: colors.orange, fontWeight: '700' },
+  body: {
+    flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  title: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.midnightNavy,
+  },
+  titleUnread: {
+    fontWeight: '800',
+    color: colors.midnightNavy,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.safetyTeal,
+    marginLeft: spacing.sm,
+  },
+  text: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  meta: {
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  demo: {
+    fontSize: 11,
+    color: colors.warning,
+    fontWeight: '700',
+  },
 });

@@ -1,6 +1,6 @@
-// Owned by Person 1 (only P1 edits this file).
-// Flow: Splash -> Onboarding (first launch only) -> Main (bottom tabs).
-// Stack screens above the tabs: AlertDetails, ContactForm, Notifications, Profile.
+// Kavach Smart Helmet: Application Navigation
+// Flow: Splash -> Onboarding (first launch) -> Main (Bottom Tabs: Home, Location, Alerts, Contacts, Settings)
+// Stack screens above tabs: AlertDetails, ContactForm, Notifications, Profile.
 import React, { useEffect } from 'react';
 import { createNavigationContainerRef, NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,7 +8,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '../constants/theme';
+import { colors, shadows } from '../constants/theme';
 import { initPushNotifications, stopPushNotifications } from '../services/notificationService.js';
 import { startEmergencyNotificationWatcher, stopEmergencyNotificationWatcher } from '../services/emergencyNotificationService.js';
 
@@ -18,7 +18,6 @@ import DashboardScreen from '../screens/DashboardScreen';
 import DeviceSettingsScreen from '../screens/DeviceSettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-// Person 2 owns these. Placeholders until their versions land (same file names, same default export).
 import LocationScreen from '../screens/LocationScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import AlertDetailsScreen from '../screens/AlertDetailsScreen';
@@ -43,35 +42,50 @@ function openAlertFromPush({ alertId }) {
 
 const navTheme = {
   ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, background: colors.background, primary: colors.primary, card: colors.white, text: colors.navy, border: colors.border },
+  colors: {
+    ...DefaultTheme.colors,
+    background: colors.background,
+    primary: colors.safetyTeal,
+    card: colors.white,
+    text: colors.midnightNavy,
+    border: colors.border,
+  },
 };
 
 const TAB_ICONS = {
-  Home: ['home', 'home-outline'],
-  Location: ['location', 'location-outline'],
+  Home: ['shield-checkmark', 'shield-checkmark-outline'],
+  Location: ['navigate', 'navigate-outline'],
   Alerts: ['alert-circle', 'alert-circle-outline'],
   Contacts: ['people', 'people-outline'],
   Settings: ['settings', 'settings-outline'],
 };
 
 function MainTabs() {
-  const insets = useSafeAreaInsets(); // keeps the tab bar clear of the Android system navigation bar
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.grey,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarActiveTintColor: colors.safetyTeal,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '700',
+          letterSpacing: 0.2,
+          marginBottom: 2,
+        },
         tabBarStyle: {
-          height: 58 + insets.bottom,
-          paddingBottom: 6 + insets.bottom,
-          paddingTop: 6,
+          height: 60 + insets.bottom,
+          paddingBottom: Math.max(8, insets.bottom),
+          paddingTop: 8,
+          backgroundColor: colors.card,
           borderTopColor: colors.border,
+          borderTopWidth: 1,
+          ...shadows.sm,
         },
         tabBarIcon: ({ focused, color }) => {
-          const [active, inactive] = TAB_ICONS[route.name];
-          return <Ionicons name={focused ? active : inactive} size={24} color={color} />;
+          const [active, inactive] = TAB_ICONS[route.name] || ['ellipse', 'ellipse-outline'];
+          return <Ionicons name={focused ? active : inactive} size={22} color={color} />;
         },
       })}
     >
@@ -83,13 +97,6 @@ function MainTabs() {
     </Tab.Navigator>
   );
 }
-
-const headerOptions = {
-  headerStyle: { backgroundColor: colors.white },
-  headerTintColor: colors.navy,
-  headerTitleStyle: { fontWeight: '700' },
-  headerShadowVisible: false,
-};
 
 export default function AppNavigator() {
   useEffect(() => {
@@ -123,14 +130,13 @@ export default function AppNavigator() {
       }}
     >
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ animation: 'slide_from_right' }}>
-        {/* Splash/Onboarding use replace() and disable gestures so Back never returns to them. */}
         <Stack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />
-        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} options={{ ...headerOptions, title: 'Alert Details' }} />
-        <Stack.Screen name="ContactForm" component={ContactFormScreen} options={{ ...headerOptions, title: 'Contact' }} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ ...headerOptions, title: 'Notifications' }} />
-        <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...headerOptions, title: 'Profile' }} />
+        <Stack.Screen name="AlertDetails" component={AlertDetailsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ContactForm" component={ContactFormScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

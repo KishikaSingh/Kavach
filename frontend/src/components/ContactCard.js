@@ -1,5 +1,7 @@
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, space, type } from './person2Theme.js';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radius, shadows, spacing } from '../theme/index.js';
 
 export function ContactCard({
   contact,
@@ -11,37 +13,69 @@ export function ContactCard({
 }) {
   if (!contact) return null;
   const primary = !!contact.isPrimary;
+  const initial = contact.name ? contact.name.charAt(0).toUpperCase() : 'C';
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, shadows.sm, primary && styles.primaryBorder]}>
       <Pressable
         onPress={() => onPress?.(contact)}
         accessibilityRole="button"
         accessibilityLabel={`${contact.name}, ${contact.phone}${primary ? ', primary contact' : ''}`}
         accessibilityHint="Opens the edit contact form"
+        style={styles.cardHeader}
       >
-        <View style={styles.header}>
-          <Text style={type.subtitle}>{contact.name}</Text>
-          {primary ? (
-            <View style={styles.badge} accessibilityLabel="Primary emergency contact">
-              <Text style={styles.badgeText}>PRIMARY</Text>
+        <View style={styles.topRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initial}</Text>
+          </View>
+          <View style={styles.infoCol}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{contact.name}</Text>
+              {primary ? (
+                <View style={styles.badge} accessibilityLabel="Primary emergency contact">
+                  <Text style={styles.badgeText}>PRIMARY</Text>
+                </View>
+              ) : null}
             </View>
-          ) : null}
+            <Text style={styles.phone}>{contact.phone}</Text>
+          </View>
+          <Ionicons name="create-outline" size={20} color={colors.textMuted} />
         </View>
-        <Text style={type.muted}>{contact.phone}</Text>
       </Pressable>
+
       <View style={styles.actions}>
-        <Action label="Call" onPress={() => onCall?.(contact)} disabled={busy} />
+        <Action
+          label="Call"
+          icon="call"
+          variant="call"
+          onPress={() => onCall?.(contact)}
+          disabled={busy}
+        />
         {!primary ? (
-          <Action label="Set primary" onPress={() => onSetPrimary?.(contact)} disabled={busy} />
+          <Action
+            label="Set Primary"
+            icon="star-outline"
+            variant="default"
+            onPress={() => onSetPrimary?.(contact)}
+            disabled={busy}
+          />
         ) : null}
-        <Action label="Delete" danger onPress={() => onDelete?.(contact)} disabled={busy} />
+        <Action
+          label="Delete"
+          icon="trash-outline"
+          variant="danger"
+          onPress={() => onDelete?.(contact)}
+          disabled={busy}
+        />
       </View>
     </View>
   );
 }
 
-function Action({ label, onPress, disabled, danger }) {
+function Action({ label, icon, variant = 'default', onPress, disabled }) {
+  const isCall = variant === 'call';
+  const isDanger = variant === 'danger';
+
   return (
     <Pressable
       onPress={onPress}
@@ -49,9 +83,31 @@ function Action({ label, onPress, disabled, danger }) {
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
-      style={[styles.action, danger && styles.danger, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.action,
+        isCall && styles.actionCall,
+        isDanger && styles.actionDanger,
+        disabled && styles.disabled,
+        pressed && !disabled && styles.pressed,
+      ]}
     >
-      <Text style={[styles.actionText, danger && styles.dangerText]}>{label}</Text>
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={14}
+          color={isCall ? colors.success : isDanger ? colors.emergency : colors.midnightNavy}
+          style={styles.actionIcon}
+        />
+      ) : null}
+      <Text
+        style={[
+          styles.actionText,
+          isCall && styles.actionTextCall,
+          isDanger && styles.actionTextDanger,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -61,22 +117,108 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: space.md,
-    marginBottom: space.sm,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  badge: { backgroundColor: colors.success, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: space.sm },
+  primaryBorder: {
+    borderColor: 'rgba(0, 184, 169, 0.4)',
+    borderLeftWidth: 4,
+    borderLeftColor: colors.safetyTeal,
+  },
+  cardHeader: {
+    marginBottom: spacing.sm,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  avatarText: {
+    color: colors.safetyTeal,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  infoCol: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  name: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.midnightNavy,
+  },
+  badge: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    marginLeft: 6,
+  },
+  badgeText: {
+    color: colors.safetyTeal,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  phone: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
   action: {
-    backgroundColor: colors.cardAlt,
-    borderRadius: 8,
-    paddingHorizontal: space.sm,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.mutedSurface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 7,
   },
-  danger: { backgroundColor: '#FDECEC' },
-  disabled: { opacity: 0.5 },
-  actionText: { color: colors.text, fontWeight: '600' },
-  dangerText: { color: '#B91C1C' },
+  actionCall: {
+    backgroundColor: '#E8F5E9',
+  },
+  actionDanger: {
+    backgroundColor: '#FEE2E2',
+  },
+  actionIcon: {
+    marginRight: 4,
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  actionText: {
+    color: colors.midnightNavy,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  actionTextCall: {
+    color: colors.success,
+  },
+  actionTextDanger: {
+    color: colors.emergency,
+  },
 });
+
+export default ContactCard;

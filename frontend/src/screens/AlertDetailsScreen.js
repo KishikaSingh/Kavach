@@ -1,23 +1,29 @@
-import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAlerts } from '../hooks/useAlerts.js';
 import { LocationPreview } from '../components/LocationPreview.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
 import { EmergencyDispatchBanner } from '../components/EmergencyDispatchBanner.js';
-import { colors, space, type } from '../components/person2Theme.js';
+import ScreenHeader from '../components/ScreenHeader.js';
+import StatusBadge from '../components/StatusBadge.js';
+import AppCard from '../components/AppCard.js';
+import AppButton from '../components/AppButton.js';
+import ConfirmationDialog from '../components/ConfirmationDialog.js';
+import { colors, radius, shadows, spacing } from '../constants/theme';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 
 const SMS_COPY = {
-  pending: 'Emergency SMS is still pending.',
-  confirmed: 'Emergency SMS was confirmed.',
-  failed: 'Emergency SMS failed to send.',
-  unknown: 'Emergency SMS status is unknown.',
+  pending: 'Emergency SMS is pending hardware delivery.',
+  confirmed: 'Emergency SMS confirmed sent to primary contacts.',
+  failed: 'Emergency SMS failed to send via GSM module.',
+  unknown: 'Emergency SMS delivery status is unknown.',
 };
 
 const STATUS_COPY = {
-  new: 'New — not resolved',
-  sent: 'Sent — not resolved',
-  resolved: 'Resolved',
+  new: 'Active Impact',
+  sent: 'Emergency Broadcast Sent',
+  resolved: 'Incident Resolved',
 };
 
 export function AlertDetailsScreen({ route, navigation }) {
@@ -25,125 +31,243 @@ export function AlertDetailsScreen({ route, navigation }) {
   const { alerts, loading, error, retry, resolveAlert } = useAlerts();
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const alert = useMemo(() => (alerts || []).find((a) => a.id === alertId) || null, [alerts, alertId]);
 
-  const confirmResolve = () => {
+  const handleResolveAction = async () => {
+    setShowConfirm(false);
     if (!alert || alert.status === 'resolved' || busy) return;
-    Alert.alert(
-      'Mark as resolved?',
-      'Only do this after you have handled the situation. Opening this screen did not resolve the alert.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark as resolved',
-          onPress: async () => {
-            setBusy(true);
-            setActionError(null);
-            try {
-              await resolveAlert(alert.id);
-            } catch (e) {
-              setActionError(e?.message || 'Could not resolve this alert.');
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ]
-    );
+    setBusy(true);
+    setActionError(null);
+    try {
+      await resolveAlert(alert.id);
+    } catch (e) {
+      setActionError(e?.message || 'Could not resolve this alert.');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (loading && !alert) return <LoadingState label="Loading alert" />;
+  const confirmResolve = () => {
+    if (!alert || alert.status === 'resolved' || busy) return;
+    setShowConfirm(true);
+  };
+
+  if (loading && !alert) return <LoadingState label="Loading alert…" />;
   if (error && !alert) return <ErrorState error={error} onRetry={retry} />;
+
   if (!alertId) {
     return (
-      <EmptyState
-        title="No alert selected"
-        body="Open an alert from the list."
-        actionLabel="Back to alerts"
-        onAction={() => navigation?.goBack?.()}
-      />
+      <View style={styles.fallbackScreen}>
+        <EmptyState
+          title="No alert selected"
+          body="Please select an alert from the safety log list."
+          actionLabel="Back to Alerts"
+          onAction={() => navigation?.goBack?.()}
+        />
+      </View>
     );
   }
+
   if (!alert) {
     return (
-      <EmptyState
-        title="Alert not found"
-        body="It may have been removed, or the link is out of date."
-        actionLabel="Back to alerts"
-        onAction={() => navigation?.goBack?.()}
-      />
+      <View style={styles.fallbackScreen}>
+        <EmptyState
+          title="Alert record not found"
+          body="It may have been purged or the reference link is invalid."
+          actionLabel="Back to Alerts"
+          onAction={() => navigation?.goBack?.()}
+        />
+      </View>
     );
   }
 
   const resolved = alert.status === 'resolved';
   const gpsStatus = alert.gpsValid ? 'available' : 'unavailable';
+  const severity = alert.severity || 'medium';
+  const isEmergency = severity === 'high' || alert.status === 'new';
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={type.title} accessibilityRole="header">
-        Alert details
-      </Text>
-      <Text style={type.subtitle}>
-        {(alert.severity || 'medium').toUpperCase()} · {STATUS_COPY[alert.status] || alert.status}
-      </Text>
-      <Text style={type.muted}>
-        {formatDateTime(alert.timestamp)} ({relativeTime(alert.timestamp)})
-      </Text>
-
-      <StatusBanner tone={alert.smsStatus === 'failed' ? 'danger' : 'info'}>
-        {SMS_COPY[alert.smsStatus] || SMS_COPY.unknown}
-      </StatusBanner>
-
-      <EmergencyDispatchBanner
-        alert={alert}
-        onAddContacts={() => navigation?.navigate?.('Contacts')}
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Alert Details"
+        subtitle={`Incident ID #${alert.id.slice(-6)}`}
+        onBack={() => navigation?.goBack?.()}
       />
 
-      {actionError ? <StatusBanner tone="danger">{actionError}</StatusBanner> : null}
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        {/* Incident Hero Card */}
+        <AppCard
+          variant={isEmergency && !resolved ? 'emergency' : 'default'}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroHeader}>
+            <View style={[styles.heroIconWrap, { backgroundColor: isEmergency && !resolved ? 'rgba(229, 72, 77, 0.15)' : 'rgba(0, 184, 169, 0.12)' }]}>
+              <Ionicons
+                name={isEmergency && !resolved ? 'alert-circle' : 'shield-checkmark'}
+                size={26}
+                color={isEmergency && !resolved ? colors.emergency : colors.safetyTeal}
+              />
+            </View>
+            <View style={styles.heroTitles}>
+              <Text style={styles.heroTitle}>{STATUS_COPY[alert.status] || alert.status}</Text>
+              <Text style={styles.heroSeverity}>
+                {severity.toUpperCase()} SEVERITY IMPACT
+              </Text>
+            </View>
+            <StatusBadge
+              label={resolved ? 'Resolved' : 'Active'}
+              tone={resolved ? 'green' : 'red'}
+            />
+          </View>
 
-      <LocationPreview
-        latitude={alert.latitude}
-        longitude={alert.longitude}
-        gpsValid={alert.gpsValid === true}
-        gpsStatus={gpsStatus}
-        timestampLabel="Position recorded with this alert"
+          <View style={styles.heroDivider} />
+
+          <View style={styles.timeRow}>
+            <Ionicons name="time-outline" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
+            <Text style={styles.timeText}>
+              {formatDateTime(alert.timestamp)} ({relativeTime(alert.timestamp)})
+            </Text>
+          </View>
+        </AppCard>
+
+        {/* SMS Status Banner */}
+        <StatusBanner tone={alert.smsStatus === 'failed' ? 'danger' : alert.smsStatus === 'confirmed' ? 'success' : 'info'}>
+          {SMS_COPY[alert.smsStatus] || SMS_COPY.unknown}
+        </StatusBanner>
+
+        {/* Emergency Dispatch Banner */}
+        <EmergencyDispatchBanner
+          alert={alert}
+          onAddContacts={() => navigation?.navigate?.('Contacts')}
+        />
+
+        {actionError ? <StatusBanner tone="danger">{actionError}</StatusBanner> : null}
+
+        {/* Location Preview Card */}
+        <LocationPreview
+          latitude={alert.latitude}
+          longitude={alert.longitude}
+          gpsValid={alert.gpsValid === true}
+          gpsStatus={gpsStatus}
+          timestampLabel="Position recorded with this alert"
+        />
+
+        {/* Resolution Notice & Actions */}
+        <View style={styles.resolveSection}>
+          <Text style={styles.resolveNotice}>
+            Viewing this alert does not mark it resolved. Only mark as resolved after confirming rider safety and handling the situation.
+          </Text>
+
+          <AppButton
+            title={resolved ? 'Incident Resolved' : busy ? 'Resolving…' : 'Mark as Resolved'}
+            variant={resolved ? 'secondary' : 'primary'}
+            icon={resolved ? 'checkmark-circle-outline' : 'shield-checkmark-outline'}
+            onPress={confirmResolve}
+            disabled={resolved || busy}
+            loading={busy}
+            style={styles.resolveBtn}
+          />
+        </View>
+
+        <View style={{ height: spacing.xxl }} />
+      </ScrollView>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        visible={showConfirm}
+        title="Resolve Incident Alert?"
+        message="Only mark this alert as resolved once you have verified the rider's condition and completed emergency response."
+        confirmLabel="Mark as Resolved"
+        cancelLabel="Cancel"
+        onConfirm={handleResolveAction}
+        onCancel={() => setShowConfirm(false)}
       />
-
-      <Text style={[type.muted, styles.note]}>
-        Viewing this alert does not mark it resolved. Use the button below only after you have responded.
-      </Text>
-
-      <Pressable
-        onPress={confirmResolve}
-        disabled={resolved || busy}
-        accessibilityRole="button"
-        accessibilityState={{ disabled: resolved || busy }}
-        accessibilityLabel={resolved ? 'Alert already resolved' : 'Mark alert as resolved'}
-        style={[styles.resolve, (resolved || busy) && styles.disabled]}
-      >
-        <Text style={[styles.resolveText, (resolved || busy) && styles.disabledText]}>
-          {resolved ? 'Already resolved' : busy ? 'Saving…' : 'Mark as resolved'}
-        </Text>
-      </Pressable>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.md, paddingBottom: 40, gap: space.sm },
-  note: { marginTop: space.sm },
-  resolve: {
-    marginTop: space.md,
-    backgroundColor: colors.success,
-    borderRadius: 10,
-    paddingVertical: space.sm,
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screen: {
+    flex: 1,
+  },
+  fallbackScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    justifyContent: 'center',
+  },
+  content: {
+    padding: spacing.md,
+    paddingBottom: 40,
+  },
+  heroCard: {
+    marginBottom: spacing.md,
+  },
+  heroHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  disabled: { backgroundColor: colors.cardAlt },
-  resolveText: { color: '#FFFFFF', fontWeight: '700' },
-  disabledText: { color: colors.muted },
+  heroIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  heroTitles: {
+    flex: 1,
+  },
+  heroTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.midnightNavy,
+  },
+  heroSeverity: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  heroDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  resolveSection: {
+    marginTop: spacing.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  resolveNotice: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: spacing.md,
+  },
+  resolveBtn: {
+    width: '100%',
+  },
 });
 
 export default AlertDetailsScreen;

@@ -139,7 +139,7 @@ export default function DeviceSettingsScreen() {
         <View style={styles.warnBox} accessibilityRole="alert">
           {warnings.map((w) => (
             <View key={w} style={styles.warnRow}>
-              <Ionicons name="warning" size={16} color={colors.orange} style={styles.warnIcon} />
+              <Ionicons name="warning" size={16} color={colors.warning} style={styles.warnIcon} />
               <Text style={styles.warnText}>{w}</Text>
             </View>
           ))}
@@ -198,7 +198,7 @@ export default function DeviceSettingsScreen() {
       {settingsError ? (
         <View style={styles.settingsErrorBox} accessibilityRole="alert">
           <View style={styles.warnRow}>
-            <Ionicons name="alert-circle-outline" size={18} color={colors.red} style={styles.warnIcon} />
+            <Ionicons name="alert-circle-outline" size={18} color={colors.emergency} style={styles.warnIcon} />
             <View style={{ flex: 1 }}>
               <Text style={styles.settingsErrorTitle}>Settings unavailable</Text>
               <Text style={styles.settingsErrorText}>
@@ -209,6 +209,7 @@ export default function DeviceSettingsScreen() {
                   title="Retry"
                   icon="refresh"
                   variant="secondary"
+                  size="sm"
                   onPress={retrySettings}
                   style={styles.retryBtn}
                 />
@@ -219,10 +220,10 @@ export default function DeviceSettingsScreen() {
       ) : null}
 
       {saveError ? (
-        <View style={[styles.warnBox, { backgroundColor: colors.redSoft, marginTop: spacing.sm }]} accessibilityRole="alert">
+        <View style={[styles.warnBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', marginTop: spacing.sm }]} accessibilityRole="alert">
           <View style={styles.warnRow}>
-            <Ionicons name="alert-circle" size={16} color={colors.red} style={styles.warnIcon} />
-            <Text style={[styles.warnText, { color: colors.red }]}>{saveError}</Text>
+            <Ionicons name="alert-circle" size={16} color={colors.emergency} style={styles.warnIcon} />
+            <Text style={[styles.warnText, { color: colors.emergency }]}>{saveError}</Text>
           </View>
         </View>
       ) : null}
@@ -243,7 +244,8 @@ export default function DeviceSettingsScreen() {
               value={Boolean(pushEnabled)}
               onValueChange={setNotif('push')}
               disabled={!settings}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ true: colors.safetyTeal, false: '#CBD5E1' }}
+              thumbColor={colors.white}
             />
           }
         />
@@ -255,27 +257,68 @@ export default function DeviceSettingsScreen() {
               value={Boolean(soundEnabled)}
               onValueChange={setNotif('sound')}
               disabled={!settings}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ true: colors.safetyTeal, false: '#CBD5E1' }}
+              thumbColor={colors.white}
             />
           }
           last
         />
       </View>
+
+      <View style={{ height: spacing.xxl }} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { ...typography.title },
-  demo: { marginTop: spacing.sm },
-  section: { ...typography.heading, marginTop: spacing.xl, marginBottom: spacing.sm },
-  warnBox: { backgroundColor: colors.orangeSoft, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
-  warnRow: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 3 },
-  warnIcon: { marginRight: spacing.sm, marginTop: 2 },
-  warnText: { flex: 1, fontSize: 13, color: colors.navy },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.lg, paddingVertical: spacing.xs },
+  title: {
+    ...typography.title,
+    color: colors.midnightNavy,
+  },
+  demo: {
+    marginTop: spacing.sm,
+  },
+  section: {
+    ...typography.heading,
+    color: colors.midnightNavy,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  warnBox: {
+    backgroundColor: '#FEF3DC',
+    borderColor: '#FCD34D',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  warnRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginVertical: 3,
+  },
+  warnIcon: {
+    marginRight: spacing.sm,
+    marginTop: 2,
+  },
+  warnText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.midnightNavy,
+    lineHeight: 18,
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+  },
   settingsErrorBox: {
-    backgroundColor: colors.redSoft,
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -283,17 +326,15 @@ const styles = StyleSheet.create({
   settingsErrorTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.red,
+    color: colors.emergency,
     marginBottom: 2,
   },
   settingsErrorText: {
     fontSize: 13,
-    color: colors.navy,
+    color: colors.midnightNavy,
   },
   retryBtn: {
     marginTop: spacing.sm,
     alignSelf: 'flex-start',
-    minHeight: 36,
-    paddingHorizontal: spacing.md,
   },
 });

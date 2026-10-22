@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Alert, FlatList, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { FlatList, Linking, StyleSheet, Text, View } from 'react-native';
 import { useContacts } from '../hooks/useContacts.js';
 import { ContactCard } from '../components/ContactCard.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
 import ScreenContainer from '../components/ScreenContainer.js';
-import { colors, space, type } from '../components/person2Theme.js';
+import AppButton from '../components/AppButton.js';
+import ConfirmationDialog from '../components/ConfirmationDialog.js';
+import { colors, radius, spacing, typography } from '../constants/theme';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
 export function ContactsScreen({ navigation }) {
@@ -20,6 +22,7 @@ export function ContactsScreen({ navigation }) {
   } = useContacts();
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [contactToDelete, setContactToDelete] = useState(null);
 
   const callContact = async (contact) => {
     const url = `tel:${contact.phone}`;
@@ -32,30 +35,22 @@ export function ContactsScreen({ navigation }) {
   };
 
   const confirmDelete = (contact) => {
-    Alert.alert(
-      'Delete contact?',
-      contact.isPrimary
-        ? `${contact.name} is the primary emergency contact. Deleting them does not change the number stored on the helmet.`
-        : `Delete ${contact.name}? This does not change the number stored on the helmet.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setBusyId(contact.id);
-            setActionError(null);
-            try {
-              await deleteContact(contact.id);
-            } catch (e) {
-              setActionError(e?.message || 'Could not delete this contact.');
-            } finally {
-              setBusyId(null);
-            }
-          },
-        },
-      ]
-    );
+    setContactToDelete(contact);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (!contactToDelete) return;
+    const target = contactToDelete;
+    setContactToDelete(null);
+    setBusyId(target.id);
+    setActionError(null);
+    try {
+      await deleteContact(target.id);
+    } catch (e) {
+      setActionError(e?.message || 'Could not delete this contact.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const makePrimary = async (contact) => {
@@ -70,7 +65,7 @@ export function ContactsScreen({ navigation }) {
     }
   };
 
-  if (loading && !contacts.length) return <LoadingState label="Loading contacts" />;
+  if (loading && !contacts.length) return <LoadingState label="Loading emergency contacts…" />;
   if (error && !contacts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
@@ -80,36 +75,48 @@ export function ContactsScreen({ navigation }) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
-          <View>
-            <Text style={type.title} accessibilityRole="header">
-              Emergency contacts
-            </Text>
+          <View style={styles.headerArea}>
+            <View style={styles.titleRow}>
+              <View>
+                <Text style={styles.title} accessibilityRole="header">
+                  Emergency Contacts
+                </Text>
+                <Text style={styles.subtitle}>Trusted responders notified during impact</Text>
+              </View>
+            </View>
+
             <StatusBanner tone="info">
-              App contacts are for calling from the phone. They are not automatically written to the helmet SMS
-              recipient. Helmet SMS sync is coming soon.
+              Contacts saved here are dialed from this device. Helmet hardware SMS recipient synchronization is coming in a future update.
             </StatusBanner>
+
             {!isConfigured ? (
-              <StatusBanner tone="warning">No contacts yet. Add at least one emergency contact.</StatusBanner>
+              <StatusBanner tone="warning">No contacts configured. Add at least one primary emergency contact.</StatusBanner>
             ) : primaryContact ? (
-              <Text style={type.muted}>Primary: {primaryContact.name}</Text>
+              <View style={styles.primaryIndicator}>
+                <Text style={styles.primaryIndicatorText}>
+                  Primary Responder: <Text style={{ fontWeight: '800' }}>{primaryContact.name}</Text>
+                </Text>
+              </View>
             ) : null}
+
             {actionError ? <StatusBanner tone="danger">{actionError}</StatusBanner> : null}
             {error ? <StatusBanner tone="danger">{error.message}</StatusBanner> : null}
-            <Pressable
+
+            <AppButton
+              title="Add Emergency Contact"
+              icon="person-add-outline"
+              variant="primary"
               onPress={() => navigation?.navigate(PERSON2_ROUTES.ContactForm, {})}
-              accessibilityRole="button"
-              accessibilityLabel="Add emergency contact"
-              style={styles.add}
-            >
-              <Text style={styles.addText}>Add contact</Text>
-            </Pressable>
+              style={styles.addBtn}
+            />
           </View>
         }
         ListEmptyComponent={
           <EmptyState
+            icon="people-outline"
             title="No emergency contacts"
-            body="Add someone the rider trusts. Saving here does not update the helmet SMS number."
-            actionLabel="Add contact"
+            body="Add someone the rider trusts. In case of an accident detection, their details will be immediately accessible."
+            actionLabel="Add Contact"
             onAction={() => navigation?.navigate(PERSON2_ROUTES.ContactForm, {})}
           />
         }
@@ -124,21 +131,66 @@ export function ContactsScreen({ navigation }) {
           />
         )}
       />
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        visible={Boolean(contactToDelete)}
+        title="Delete Contact?"
+        message={
+          contactToDelete?.isPrimary
+            ? `${contactToDelete?.name} is the primary emergency contact. Deleting them removes quick-dial access.`
+            : `Are you sure you want to delete ${contactToDelete?.name}?`
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={handleDeleteConfirmed}
+        onCancel={() => setContactToDelete(null)}
+      />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  containerPadding: { padding: 0 },
-  content: { padding: space.md, paddingBottom: 40, flexGrow: 1 },
-  add: {
-    marginVertical: space.md,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: space.sm,
-    alignItems: 'center',
+  containerPadding: {
+    padding: 0,
   },
-  addText: { color: '#FFFFFF', fontWeight: '700' },
+  content: {
+    padding: spacing.md,
+    paddingBottom: 40,
+    flexGrow: 1,
+    backgroundColor: colors.background,
+  },
+  headerArea: {
+    marginBottom: spacing.sm,
+  },
+  titleRow: {
+    marginBottom: spacing.sm,
+  },
+  title: {
+    ...typography.title,
+    color: colors.midnightNavy,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  primaryIndicator: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    marginVertical: spacing.xs,
+  },
+  primaryIndicatorText: {
+    fontSize: 13,
+    color: colors.safetyTeal,
+    fontWeight: '600',
+  },
+  addBtn: {
+    marginVertical: spacing.md,
+  },
 });
+
 export default ContactsScreen;

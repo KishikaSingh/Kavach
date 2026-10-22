@@ -15,7 +15,7 @@ export default function DeviceHealthCard({
   const safeTone = tone || 'grey';
   const t = getTone(safeTone);
   return (
-    <View style={[styles.card, shadows.card]}>
+    <View style={[styles.card, shadows.sm]}>
       <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
         <Ionicons name={icon || 'help-circle-outline'} size={20} color={t.fg} />
       </View>
@@ -33,10 +33,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    minHeight: 56,
+    minHeight: 60,
   },
   iconWrap: {
     width: 40,
@@ -46,8 +48,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  body: { flex: 1, paddingRight: spacing.sm },
-  label: { fontSize: 14, fontWeight: '700', color: colors.navy },
-  note: { fontSize: 12, color: colors.muted, marginTop: 2 },
-  badge: { maxWidth: '40%' },
+  body: {
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.midnightNavy,
+  },
+  note: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  badge: {
+    maxWidth: '42%',
+  },
 });

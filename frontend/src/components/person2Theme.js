@@ -1,26 +1,35 @@
-// Visual tokens for Person 2 screens. Coordinated with the global Kavach design system.
+// Visual tokens for Person 2 screens — unified with global Kavach design system.
+import { colors as themeColors, typography as themeType, spacing as themeSpace } from '../theme/index.js';
+
 export const colors = {
-  bg: '#F4F7FB',
-  card: '#FFFFFF',
-  cardAlt: '#EEF2F8',
-  border: '#E3E8F0',
-  text: '#0B1B3A',
-  muted: '#5B6780',
-  primary: '#1F4FD8',
-  danger: '#E5484D',
-  warning: '#F59E0B',
-  success: '#1FA971',
-  high: '#E5484D',
-  medium: '#F59E0B',
-  low: '#1F4FD8',
+  bg: themeColors.background,
+  card: themeColors.card,
+  cardAlt: themeColors.cardAlt,
+  border: themeColors.border,
+  text: themeColors.text,
+  muted: themeColors.textSecondary,
+  primary: themeColors.primary,
+  danger: themeColors.emergency,
+  warning: themeColors.warning,
+  success: themeColors.safetyTeal,
+  high: themeColors.emergency,
+  medium: themeColors.warning,
+  low: themeColors.safetyTeal,
 };
 
-export const space = { xs: 6, sm: 10, md: 16, lg: 24 };
+export const space = {
+  xs: themeSpace.xs,
+  sm: themeSpace.sm,
+  md: themeSpace.lg,
+  lg: themeSpace.xxl,
+};
 
 export const type = {
-  title: { fontSize: 24, fontWeight: '700', color: '#0B1B3A' },
-  subtitle: { fontSize: 16, fontWeight: '600', color: '#0B1B3A' },
-  body: { fontSize: 15, color: '#0B1B3A' },
-  muted: { fontSize: 13, color: '#5B6780' },
-  label: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: '#5B6780' },
+  title: themeType.title,
+  subtitle: themeType.subtitle,
+  body: themeType.body,
+  muted: themeType.supporting,
+  label: themeType.label,
 };
+
+export default { colors, space, type };

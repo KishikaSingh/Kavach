@@ -1,17 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { useContacts } from '../hooks/useContacts.js';
 import { EmptyState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
-import { colors, space, type } from '../components/person2Theme.js';
+import ScreenHeader from '../components/ScreenHeader.js';
+import AppCard from '../components/AppCard.js';
+import AppButton from '../components/AppButton.js';
+import { colors, radius, spacing } from '../constants/theme';
 import { normalizePhone, validateName } from '../utils/validators.js';
 
 export function ContactFormScreen({ route, navigation }) {
@@ -31,7 +34,6 @@ export function ContactFormScreen({ route, navigation }) {
 
   useEffect(() => {
     if (!existing) return;
-    // The contact arrives asynchronously; copy it once when edit mode loads.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(existing.name);
     setPhone(existing.phone);
@@ -45,15 +47,17 @@ export function ContactFormScreen({ route, navigation }) {
     else setFormError(message);
   };
 
-  if (contactId && loading && !existing) return <LoadingState label="Loading contact" />;
+  if (contactId && loading && !existing) return <LoadingState label="Loading contact…" />;
   if (contactId && !loading && !existing) {
     return (
-      <EmptyState
-        title="Contact not found"
-        body="It may have been deleted."
-        actionLabel="Back to contacts"
-        onAction={() => navigation?.goBack?.()}
-      />
+      <View style={styles.fallbackScreen}>
+        <EmptyState
+          title="Contact not found"
+          body="It may have been removed."
+          actionLabel="Back to Contacts"
+          onAction={() => navigation?.goBack?.()}
+        />
+      </View>
     );
   }
 
@@ -111,86 +115,90 @@ export function ContactFormScreen({ route, navigation }) {
 
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScreenHeader
+        title={existing ? 'Edit Contact' : 'New Contact'}
+        subtitle={existing ? 'Update responder details' : 'Add emergency responder'}
+        onBack={() => navigation?.goBack?.()}
+      />
+
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={type.title} accessibilityRole="header">
-          {existing ? 'Edit contact' : 'Add contact'}
-        </Text>
         <StatusBanner tone="info">
-          Saving here does not update the helmet’s SMS recipient. Helmet SMS sync is coming soon.
+          Emergency contacts are saved to your Kavach profile for calling and automated notification dispatch.
         </StatusBanner>
+
         {formError ? (
           <StatusBanner tone="danger" accessibilityLabel={formError}>
             {formError}
           </StatusBanner>
         ) : null}
 
-        <Text style={type.label} nativeID="nameLabel">
-          NAME
-        </Text>
-        <TextInput
-          value={name}
-          onChangeText={(v) => {
-            setName(v);
-            setNameError('');
-          }}
-          placeholder="Full name"
-          placeholderTextColor={colors.muted}
-          autoCapitalize="words"
-          accessibilityLabel="Contact name"
-          accessibilityLabelledBy="nameLabel"
-          style={[styles.input, nameError ? styles.inputError : null]}
-        />
-        {nameError ? (
-          <Text style={styles.error} accessibilityLiveRegion="polite">
-            {nameError}
+        <AppCard variant="default" style={styles.card}>
+          <Text style={styles.fieldLabel} nativeID="nameLabel">
+            FULL NAME
           </Text>
-        ) : null}
+          <TextInput
+            value={name}
+            onChangeText={(v) => {
+              setName(v);
+              setNameError('');
+            }}
+            placeholder="e.g. Rahul Sharma"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="words"
+            accessibilityLabel="Contact name"
+            accessibilityLabelledBy="nameLabel"
+            style={[styles.input, nameError ? styles.inputError : null]}
+          />
+          {nameError ? (
+            <Text style={styles.error} accessibilityLiveRegion="polite">
+              {nameError}
+            </Text>
+          ) : null}
 
-        <Text style={type.label} nativeID="phoneLabel">
-          PHONE
-        </Text>
-        <TextInput
-          value={phone}
-          onChangeText={(v) => {
-            setPhone(v);
-            setPhoneError('');
-          }}
-          placeholder="+91 98765 43210"
-          placeholderTextColor={colors.muted}
-          keyboardType="phone-pad"
-          autoComplete="tel"
-          textContentType="telephoneNumber"
-          accessibilityLabel="Contact phone number"
-          accessibilityLabelledBy="phoneLabel"
-          style={[styles.input, phoneError ? styles.inputError : null]}
-        />
-        {phoneError ? (
-          <Text style={styles.error} accessibilityLiveRegion="polite">
-            {phoneError}
+          <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]} nativeID="phoneLabel">
+            PHONE NUMBER
           </Text>
-        ) : null}
+          <TextInput
+            value={phone}
+            onChangeText={(v) => {
+              setPhone(v);
+              setPhoneError('');
+            }}
+            placeholder="+91 98765 43210"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            accessibilityLabel="Contact phone number"
+            accessibilityLabelledBy="phoneLabel"
+            style={[styles.input, phoneError ? styles.inputError : null]}
+          />
+          {phoneError ? (
+            <Text style={styles.error} accessibilityLiveRegion="polite">
+              {phoneError}
+            </Text>
+          ) : null}
+        </AppCard>
 
-        <Pressable
+        <AppButton
+          title={busy ? 'Saving…' : existing ? 'Save Changes' : 'Save Emergency Contact'}
+          icon="save-outline"
+          variant="primary"
           onPress={onSave}
           disabled={busy}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: busy }}
-          accessibilityLabel={existing ? 'Save contact' : 'Add contact'}
-          style={[styles.save, busy && styles.disabled]}
-        >
-          <Text style={styles.saveText}>{busy ? 'Saving…' : existing ? 'Save changes' : 'Add contact'}</Text>
-        </Pressable>
+          loading={busy}
+          style={styles.saveBtn}
+        />
 
         {existing ? (
-          <Pressable
+          <AppButton
+            title="Delete Contact"
+            icon="trash-outline"
+            variant="danger"
             onPress={onDelete}
             disabled={busy}
-            accessibilityRole="button"
-            accessibilityLabel="Delete contact"
-            style={styles.delete}
-          >
-            <Text style={styles.deleteText}>Delete contact</Text>
-          </Pressable>
+            style={styles.deleteBtn}
+          />
         ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -198,30 +206,57 @@ export function ContactFormScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.md, paddingBottom: 40, gap: space.sm },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  fallbackScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    justifyContent: 'center',
+  },
+  content: {
+    padding: spacing.md,
+    paddingBottom: 40,
+  },
+  card: {
+    padding: spacing.lg,
+    marginVertical: spacing.md,
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 0.8,
+    marginBottom: spacing.xs,
+  },
   input: {
     backgroundColor: colors.card,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 10,
-    color: colors.text,
-    paddingHorizontal: space.md,
+    borderRadius: radius.md,
+    color: colors.midnightNavy,
+    paddingHorizontal: spacing.md,
     paddingVertical: 12,
     fontSize: 16,
+    fontWeight: '600',
   },
-  inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 13 },
-  save: {
-    marginTop: space.md,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: space.sm,
-    alignItems: 'center',
+  inputError: {
+    borderColor: colors.emergency,
   },
-  disabled: { opacity: 0.6 },
-  saveText: { color: '#FFFFFF', fontWeight: '700' },
-  delete: { marginTop: space.sm, alignItems: 'center', paddingVertical: space.sm },
-  deleteText: { color: colors.danger, fontWeight: '700' },
+  error: {
+    color: colors.emergency,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  saveBtn: {
+    marginTop: spacing.sm,
+  },
+  deleteBtn: {
+    marginTop: spacing.md,
+  },
 });
+
 export default ContactFormScreen;

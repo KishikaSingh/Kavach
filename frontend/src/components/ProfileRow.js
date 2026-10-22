@@ -14,7 +14,9 @@ export default function ProfileRow({ icon, label, value, onPress, right, comingS
       accessibilityRole={tappable ? 'button' : undefined}
       style={[styles.row, !last && styles.divider, comingSoon && styles.dim]}
     >
-      <Ionicons name={icon} size={22} color={colors.primary} style={styles.icon} />
+      <View style={styles.iconContainer}>
+        <Ionicons name={icon} size={20} color={colors.safetyTeal} style={styles.icon} />
+      </View>
       <View style={styles.body}>
         <Text style={styles.label}>{label}</Text>
         {value ? (
@@ -25,18 +27,49 @@ export default function ProfileRow({ icon, label, value, onPress, right, comingS
       </View>
       {comingSoon ? <Text style={styles.soon}>Coming soon</Text> : null}
       {right || null}
-      {tappable ? <Ionicons name="chevron-forward" size={18} color={colors.grey} /> : null}
+      {tappable ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
     </Wrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', minHeight: MIN_TOUCH + 12, paddingVertical: spacing.sm },
-  divider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  dim: { opacity: 0.6 },
-  icon: { width: 32 },
-  body: { flex: 1, paddingRight: spacing.sm },
-  label: { fontSize: 15, fontWeight: '600', color: colors.navy },
-  value: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  soon: { fontSize: 11, fontWeight: '700', color: colors.grey },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: MIN_TOUCH + 12,
+    paddingVertical: spacing.sm + 2,
+  },
+  iconContainer: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  divider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  dim: {
+    opacity: 0.6,
+  },
+  icon: {},
+  body: {
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.midnightNavy,
+  },
+  value: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  soon: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
 });
