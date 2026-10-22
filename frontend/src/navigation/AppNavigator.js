@@ -1,14 +1,16 @@
 // Kavach Smart Helmet: Application Navigation
 // Flow: Splash -> Onboarding (first launch) -> Main (Bottom Tabs: Home, Location, Alerts, Contacts, Settings)
 // Stack screens above tabs: AlertDetails, ContactForm, Notifications, Profile.
-import React, { useEffect } from 'react';
+// Dynamic Theme-aware navigation container and tab bar.
+
+import React, { useEffect, useMemo } from 'react';
 import { createNavigationContainerRef, NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, shadows } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
 import { initPushNotifications, stopPushNotifications } from '../services/notificationService.js';
 import { startEmergencyNotificationWatcher, stopEmergencyNotificationWatcher } from '../services/emergencyNotificationService.js';
 
@@ -40,18 +42,6 @@ function openAlertFromPush({ alertId }) {
   }
 }
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.background,
-    primary: colors.safetyTeal,
-    card: colors.white,
-    text: colors.midnightNavy,
-    border: colors.border,
-  },
-};
-
 const TAB_ICONS = {
   Home: ['shield-checkmark', 'shield-checkmark-outline'],
   Location: ['navigate', 'navigate-outline'],
@@ -62,6 +52,8 @@ const TAB_ICONS = {
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -81,7 +73,7 @@ function MainTabs() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          ...shadows.sm,
+          elevation: isDark ? 4 : 2,
         },
         tabBarIcon: ({ focused, color }) => {
           const [active, inactive] = TAB_ICONS[route.name] || ['ellipse', 'ellipse-outline'];
@@ -99,6 +91,8 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const { colors, isDark } = useTheme();
+
   useEffect(() => {
     startEmergencyNotificationWatcher();
     return () => {
@@ -117,6 +111,22 @@ export default function AppNavigator() {
       })
       .catch((error) => console.error('Could not initialize push notifications.', error));
   };
+
+  const navTheme = useMemo(
+    () => ({
+      ...DefaultTheme,
+      dark: isDark,
+      colors: {
+        ...DefaultTheme.colors,
+        background: colors.background,
+        primary: colors.safetyTeal,
+        card: colors.card,
+        text: colors.text,
+        border: colors.border,
+      },
+    }),
+    [isDark, colors]
+  );
 
   return (
     <NavigationContainer

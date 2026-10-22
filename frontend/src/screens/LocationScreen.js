@@ -10,11 +10,14 @@ import ScreenContainer from '../components/ScreenContainer.js';
 import DemoModeBanner from '../components/DemoModeBanner.js';
 import AppButton from '../components/AppButton.js';
 import AppCard from '../components/AppCard.js';
-import { colors, radius, shadows, spacing, typography } from '../constants/theme';
+import { radius, shadows, spacing, typography } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme.js';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
 export function LocationScreen({ navigation }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const { device, dataSource, backendReachable, loading, error, refresh, refreshing, retry } = useDevice();
   const { activeAlerts } = useAlerts();
   const { isDemo } = useDemoControls();
@@ -22,6 +25,8 @@ export function LocationScreen({ navigation }) {
   const onRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
+
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   if (loading && !device) return <LoadingState label="Acquiring helmet position…" />;
   if (error && !device) return <ErrorState error={error} onRetry={retry} />;
@@ -116,13 +121,13 @@ export function LocationScreen({ navigation }) {
             style={styles.activeAlertCard}
           >
             <View style={styles.activeAlertIconWrap}>
-              <Ionicons name="alert-circle" size={24} color={colors.white} />
+              <Ionicons name="alert-circle" size={24} color="#FFFFFF" />
             </View>
             <View style={styles.activeAlertTextWrap}>
               <Text style={styles.activeAlertTitle}>ACTIVE ACCIDENT ALERT</Text>
               <Text style={styles.activeAlertSub}>Tap to review coordinates & emergency dispatch</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.white} />
+            <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
           </Pressable>
         ) : null}
 
@@ -139,7 +144,7 @@ export function LocationScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors, isDark) => StyleSheet.create({
   fallbackScreen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -162,7 +167,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
-    color: colors.midnightNavy,
+    color: colors.text,
   },
   subtitle: {
     fontSize: 13,
@@ -187,7 +192,7 @@ const styles = StyleSheet.create({
   },
   metaBold: {
     fontWeight: '700',
-    color: colors.midnightNavy,
+    color: colors.text,
   },
   refreshBtn: {
     marginTop: spacing.md,
@@ -216,12 +221,12 @@ const styles = StyleSheet.create({
   activeAlertTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: colors.white,
+    color: '#FFFFFF',
     letterSpacing: 0.4,
   },
   activeAlertSub: {
     fontSize: 11,
-    color: colors.white,
+    color: '#FFFFFF',
     opacity: 0.9,
     marginTop: 2,
   },

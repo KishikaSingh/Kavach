@@ -1,9 +1,11 @@
 // One health row (label + value + status icon + optional note) for the Device Settings screen.
+// Dynamic Theme-aware component.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StatusBadge from './StatusBadge';
-import { colors, getTone, radius, shadows, spacing } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, shadows, spacing } from '../constants/theme';
 
 export default function DeviceHealthCard({
   icon = 'help-circle-outline',
@@ -12,16 +14,18 @@ export default function DeviceHealthCard({
   tone = 'grey',
   note,
 }) {
+  const { colors, getTone } = useTheme();
   const safeTone = tone || 'grey';
   const t = getTone(safeTone);
+
   return (
-    <View style={[styles.card, shadows.sm]}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, shadows.sm]}>
       <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
         <Ionicons name={icon || 'help-circle-outline'} size={20} color={t.fg} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.label}>{label || 'Unknown'}</Text>
-        {note ? <Text style={styles.note}>{note}</Text> : null}
+        <Text style={[styles.label, { color: colors.text }]}>{label || 'Unknown'}</Text>
+        {note ? <Text style={[styles.note, { color: colors.textSecondary }]}>{note}</Text> : null}
       </View>
       <StatusBadge label={value ?? 'Unavailable'} tone={safeTone} style={styles.badge} />
     </View>
@@ -32,10 +36,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
     minHeight: 60,
@@ -55,11 +57,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.midnightNavy,
   },
   note: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   badge: {

@@ -10,15 +10,19 @@ import ProfileRow from '../components/ProfileRow';
 import DemoModeBanner from '../components/DemoModeBanner';
 import AppCard from '../components/AppCard';
 import AppButton from '../components/AppButton';
+import ThemeSelector from '../components/ThemeSelector';
 
 import useDevice from '../hooks/useDevice';
 import useSettings from '../hooks/useSettings';
 import useContacts from '../hooks/useContacts';
 import { useDemoControls } from '../hooks/useDemoControls';
+import { useTheme } from '../hooks/useTheme';
 
-import { colors, radius, shadows, spacing, typography } from '../constants/theme';
+import { radius, shadows, spacing, typography } from '../constants/theme';
 
 export default function ProfileScreen({ navigation }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const { device, dataSource } = useDevice();
   const { settings, updateSettings } = useSettings();
   const { contacts } = useContacts();
@@ -50,6 +54,8 @@ export default function ProfileScreen({ navigation }) {
     setDemoNotice('Demo telemetry and scenarios reset to normal.');
     setTimeout(() => setDemoNotice(null), 4000);
   };
+
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -110,6 +116,12 @@ export default function ProfileScreen({ navigation }) {
           comingSoon
           last
         />
+      </View>
+
+      {/* Appearance & Theme Preferences */}
+      <Text style={styles.section}>Appearance & Theme</Text>
+      <View style={[styles.card, shadows.card, { paddingVertical: spacing.md }]}>
+        <ThemeSelector />
       </View>
 
       {/* Notification Preferences */}
@@ -227,7 +239,7 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors, isDark) => StyleSheet.create({
   profileHero: {
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -251,7 +263,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '800',
   },
@@ -289,9 +301,9 @@ const styles = StyleSheet.create({
   demoNoticeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E6F8F6',
+    backgroundColor: isDark ? '#064E3B' : '#E6F8F6',
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: isDark ? '#059669' : '#A7F3D0',
     borderRadius: radius.md,
     padding: spacing.sm + 2,
     marginBottom: spacing.sm,
@@ -304,7 +316,7 @@ const styles = StyleSheet.create({
   },
   section: {
     ...typography.heading,
-    color: colors.midnightNavy,
+    color: colors.text,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
@@ -319,7 +331,7 @@ const styles = StyleSheet.create({
   demoHeading: {
     fontSize: 12,
     fontWeight: '800',
-    color: colors.midnightNavy,
+    color: colors.text,
     letterSpacing: 0.5,
     marginBottom: spacing.sm,
   },
@@ -330,7 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   scenarioBtn: {
-    backgroundColor: colors.mutedSurface,
+    backgroundColor: isDark ? '#1E293B' : colors.mutedSurface,
     borderRadius: radius.md,
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -338,16 +350,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   scenarioBtnActive: {
-    backgroundColor: colors.midnightNavy,
-    borderColor: colors.midnightNavy,
+    backgroundColor: colors.safetyTeal,
+    borderColor: colors.safetyTeal,
   },
   scenarioBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.midnightNavy,
+    color: colors.text,
   },
   scenarioBtnTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
   demoActionRow: {
     flexDirection: 'row',

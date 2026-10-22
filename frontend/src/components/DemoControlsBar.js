@@ -1,12 +1,12 @@
-// DemoControlsBar: interactive hardware-free demo mode controls
-// Clearly labelled banner with telemetry simulation for battery, connectivity, GPS, sensors, and accidents.
-
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { colors, radius, spacing } from '../constants/theme.js';
+import { radius, spacing } from '../constants/theme.js';
 import { useDemoControls } from '../hooks/useDemoControls.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 export default function DemoControlsBar() {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const {
     isDemo,
     scenario,
@@ -75,9 +75,9 @@ export default function DemoControlsBar() {
 
       {/* Expanded Control Tray */}
       {expanded ? (
-        <View style={styles.tray}>
+        <View style={[styles.tray, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollSection}>
-            <Text style={styles.sectionTitle}>Scenarios:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Scenarios:</Text>
             {scenarios.map((sc) => {
               const active = sc === scenario;
               return (
@@ -87,9 +87,16 @@ export default function DemoControlsBar() {
                     setScenario(sc);
                     showFeedback(`Scenario set to: ${sc}`);
                   }}
-                  style={[styles.chip, active && styles.chipActive]}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? colors.primary : isDark ? '#1E293B' : colors.mutedSurface,
+                      borderColor: active ? colors.primary : colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{sc}</Text>
+                  <Text style={[styles.chipText, { color: active ? '#FFFFFF' : colors.text }]}>{sc}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -99,34 +106,34 @@ export default function DemoControlsBar() {
           <View style={styles.controlGrid}>
             {/* Battery Simulation */}
             <View style={styles.controlGroup}>
-              <Text style={styles.groupLabel}>Battery:</Text>
+              <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>Battery:</Text>
               <View style={styles.btnRow}>
                 <TouchableOpacity
                   onPress={() => {
                     setBattery(null);
                     showFeedback('Battery: Unsupported / null');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>None (null)</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>None (null)</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setBattery(15);
                     showFeedback('Battery: 15% (Low)');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>15% Low</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>15% Low</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setBattery(85);
                     showFeedback('Battery: 85% (Good)');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>85% Good</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>85% Good</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -140,122 +147,122 @@ export default function DemoControlsBar() {
                     setConnectivity(true);
                     showFeedback('Helmet: Connected');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>Connected</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>Connected</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setConnectivity(false);
                     showFeedback('Helmet: Disconnected');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>Offline</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>Offline</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* GPS Simulation */}
             <View style={styles.controlGroup}>
-              <Text style={styles.groupLabel}>GPS Status:</Text>
+              <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>GPS Status:</Text>
               <View style={styles.btnRow}>
                 <TouchableOpacity
                   onPress={() => {
                     setGps('available');
                     showFeedback('GPS: Fix Available');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>Available</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>Available</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setGps('searching');
                     showFeedback('GPS: Searching');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>Searching</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>Searching</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setGps('stale');
                     showFeedback('GPS: Stale (>5m)');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>Stale</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>Stale</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setGps('unavailable');
                     showFeedback('GPS: Unavailable');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>No Fix</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>No Fix</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Sensors Simulation */}
             <View style={styles.controlGroup}>
-              <Text style={styles.groupLabel}>Hardware Sensors:</Text>
+              <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>Hardware Sensors:</Text>
               <View style={styles.btnRow}>
                 <TouchableOpacity
                   onPress={() => {
                     setSensors({ mpuOk: true });
                     showFeedback('MPU6050: Sensor OK');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>MPU OK</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>MPU OK</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setSensors({ mpuOk: false });
                     showFeedback('MPU6050: Sensor Fault');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>MPU Fault</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>MPU Fault</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setSensors({ gsmRegistered: true });
                     showFeedback('GSM: Registered');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>GSM Reg</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>GSM Reg</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     setSensors({ gsmRegistered: false });
                     showFeedback('GSM: Unregistered');
                   }}
-                  style={styles.miniBtn}
+                  style={[styles.miniBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border }]}
                 >
-                  <Text style={styles.miniBtnText}>GSM Unreg</Text>
+                  <Text style={[styles.miniBtnText, { color: colors.text }]}>GSM Unreg</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Bottom Actions: Severity Triggers & Reset */}
-            <View style={styles.bottomRow}>
+            <View style={[styles.bottomRow, { borderColor: colors.border }]}>
               <View style={styles.accidentBtnGroup}>
                 <TouchableOpacity
                   onPress={() => handleTriggerAccident('medium')}
-                  style={[styles.accidentBtn, { backgroundColor: colors.orange }]}
+                  style={[styles.accidentBtn, { backgroundColor: colors.warning }]}
                 >
                   <Text style={styles.accidentBtnText}>Medium Accident</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => handleTriggerAccident('low')}
-                  style={[styles.accidentBtn, { backgroundColor: colors.grey }]}
+                  style={[styles.accidentBtn, { backgroundColor: colors.border }]}
                 >
-                  <Text style={styles.accidentBtnText}>Low Accident</Text>
+                  <Text style={[styles.accidentBtnText, { color: colors.text }]}>Low Accident</Text>
                 </TouchableOpacity>
               </View>
               <TouchableOpacity
@@ -263,9 +270,9 @@ export default function DemoControlsBar() {
                   resetDemo();
                   showFeedback('Demo reset to initial defaults.');
                 }}
-                style={styles.resetBtn}
+                style={[styles.resetBtn, { backgroundColor: isDark ? '#1E293B' : colors.mutedSurface, borderColor: colors.border, borderWidth: 1 }]}
               >
-                <Text style={styles.resetBtnText}>↺ Reset All</Text>
+                <Text style={[styles.resetBtnText, { color: colors.text }]}>↺ Reset All</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -302,7 +309,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   demoTagText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -313,7 +320,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   scenarioName: {
-    color: colors.navy,
+    color: '#0F172A',
     fontWeight: '700',
   },
   topActions: {
@@ -321,14 +328,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickAlertBtn: {
-    backgroundColor: colors.red,
+    backgroundColor: '#DC2626',
     borderRadius: radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginRight: 6,
   },
   quickAlertText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 11,
   },
@@ -355,7 +362,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   tray: {
-    backgroundColor: colors.white,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
@@ -368,27 +374,24 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.muted,
     alignSelf: 'center',
     marginRight: spacing.sm,
   },
   chip: {
-    backgroundColor: colors.greySoft,
     borderRadius: radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginRight: 6,
   },
   chipActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#00A99D',
   },
   chipText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.navy,
   },
   chipTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
   controlGrid: {
     paddingTop: 4,
@@ -402,7 +405,6 @@ const styles = StyleSheet.create({
     width: 110,
     fontSize: 11,
     fontWeight: '700',
-    color: colors.muted,
   },
   btnRow: {
     flexDirection: 'row',
@@ -411,17 +413,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   miniBtn: {
-    backgroundColor: colors.greySoft,
     borderRadius: radius.sm,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   miniBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.navy,
   },
   bottomRow: {
     flexDirection: 'row',
@@ -430,7 +429,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderColor: colors.border,
   },
   accidentBtnGroup: {
     flexDirection: 'row',
@@ -442,18 +440,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   accidentBtnText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
   },
   resetBtn: {
-    backgroundColor: colors.greySoft,
     borderRadius: radius.sm,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   resetBtnText: {
-    color: colors.navy,
     fontSize: 11,
     fontWeight: '700',
   },

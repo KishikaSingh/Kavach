@@ -6,10 +6,13 @@ import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../component
 import ScreenContainer from '../components/ScreenContainer.js';
 import AppButton from '../components/AppButton.js';
 import ConfirmationDialog from '../components/ConfirmationDialog.js';
-import { colors, radius, spacing, typography } from '../constants/theme';
+import { radius, spacing, typography } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme.js';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
 export function ContactsScreen({ navigation }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const {
     contacts,
     isConfigured,
@@ -23,6 +26,8 @@ export function ContactsScreen({ navigation }) {
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [contactToDelete, setContactToDelete] = useState(null);
+
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const callContact = async (contact) => {
     const url = `tel:${contact.phone}`;
@@ -151,7 +156,7 @@ export function ContactsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors, isDark) => StyleSheet.create({
   containerPadding: {
     padding: 0,
   },
@@ -169,7 +174,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
-    color: colors.midnightNavy,
+    color: colors.text,
   },
   subtitle: {
     fontSize: 13,
@@ -177,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   primaryIndicator: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: isDark ? 'rgba(0, 184, 169, 0.15)' : colors.primarySoft,
     borderRadius: radius.md,
     paddingVertical: 8,
     paddingHorizontal: spacing.md,

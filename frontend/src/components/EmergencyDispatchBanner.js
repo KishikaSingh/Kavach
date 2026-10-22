@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useEmergencyNotification } from '../hooks/useEmergencyNotification.js';
-import { colors, space, type } from './person2Theme.js';
+import { useTheme } from '../hooks/useTheme.js';
+import { getTone } from '../theme/colors.js';
+import { space, type } from './person2Theme.js';
 
 export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const { dispatchRecord, isSending, notify, retry } = useEmergencyNotification(alert?.id);
   const [actionError, setActionError] = useState(null);
 
@@ -45,82 +49,96 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
   const recipients = dispatchRecord?.recipients || [];
   const recipientNames = recipients.map((r) => r.name || r.phone).join(', ');
 
-  let bannerBg = colors.cardAlt;
+  let bannerBg = colors.cardAlt || colors.card;
   let borderColor = colors.border;
-  let statusBadgeColor = colors.muted;
+  let statusBadgeColor = isDark ? '#334155' : colors.border;
+  let statusBadgeText = colors.textSecondary;
   let statusText = 'Not triggered';
 
   if (isSending || status === 'sending') {
-    bannerBg = '#EFF6FF';
-    borderColor = colors.primary;
+    const tone = getTone('blue', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.primary;
     statusBadgeColor = colors.primary;
+    statusBadgeText = '#FFFFFF';
     statusText = 'Alerting contacts…';
   } else if (status === 'sent') {
-    bannerBg = '#E4F6EE';
-    borderColor = colors.success;
+    const tone = getTone('green', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.success;
     statusBadgeColor = colors.success;
+    statusBadgeText = '#FFFFFF';
     statusText = 'Contacts alerted';
   } else if (status === 'demo_sent') {
-    bannerBg = '#EFF6FF';
-    borderColor = colors.primary;
+    const tone = getTone('blue', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.primary;
     statusBadgeColor = colors.primary;
+    statusBadgeText = '#FFFFFF';
     statusText = 'Demo: Contacts alerted (simulated)';
   } else if (status === 'unconfigured') {
-    bannerBg = '#FEF3DC';
-    borderColor = colors.warning;
+    const tone = getTone('yellow', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.warning;
     statusBadgeColor = colors.warning;
+    statusBadgeText = '#FFFFFF';
     statusText = 'SMS gateway unconfigured';
   } else if (status === 'failed') {
-    bannerBg = '#FDECEC';
-    borderColor = colors.danger;
+    const tone = getTone('red', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.danger;
     statusBadgeColor = colors.danger;
+    statusBadgeText = '#FFFFFF';
     statusText = 'Alert delivery failed';
   } else if (status === 'no_contacts') {
-    bannerBg = '#FEF3DC';
-    borderColor = colors.warning;
+    const tone = getTone('yellow', isDark);
+    bannerBg = tone.bg;
+    borderColor = tone.border || colors.warning;
     statusBadgeColor = colors.warning;
+    statusBadgeText = '#FFFFFF';
     statusText = 'No emergency contacts';
   } else if (status === 'below_threshold') {
-    bannerBg = colors.cardAlt;
+    bannerBg = colors.cardAlt || colors.card;
     borderColor = colors.border;
-    statusBadgeColor = colors.muted;
+    statusBadgeColor = isDark ? '#334155' : colors.border;
+    statusBadgeText = colors.textSecondary;
     statusText = 'Below emergency threshold';
   }
 
   return (
     <View style={[styles.card, { backgroundColor: bannerBg, borderColor }, style]}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Emergency Contacts Dispatch</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Emergency Contacts Dispatch</Text>
         <View style={[styles.badge, { backgroundColor: statusBadgeColor }]}>
-          <Text style={styles.badgeText}>{statusText}</Text>
+          <Text style={[styles.badgeText, { color: statusBadgeText }]}>{statusText}</Text>
         </View>
       </View>
 
       {isSending ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.primary} size="small" />
-          <Text style={[type.muted, styles.bodyText]}>
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
             Notifying registered emergency contacts with incident location…
           </Text>
         </View>
       ) : null}
 
       {status === 'sent' ? (
-        <Text style={[type.muted, styles.bodyText]}>
-          SMS alert sent to: <Text style={styles.highlight}>{recipientNames || 'All registered contacts'}</Text>.
+        <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          SMS alert sent to: <Text style={[styles.highlight, { color: colors.text }]}>{recipientNames || 'All registered contacts'}</Text>.
         </Text>
       ) : null}
 
       {status === 'demo_sent' ? (
-        <Text style={[type.muted, styles.bodyText]}>
-          Simulated notification dispatched to <Text style={styles.highlight}>{recipientNames}</Text>.
+        <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          Simulated notification dispatched to <Text style={[styles.highlight, { color: colors.text }]}>{recipientNames}</Text>.
         </Text>
       ) : null}
 
       {status === 'unconfigured' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText]}>
-            Live SMS gateway is unconfigured. Set <Text style={styles.code}>EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL</Text> in environment.
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+            Live SMS gateway is unconfigured. Set <Text style={[styles.code, { color: colors.primary }]}>EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL</Text> in environment.
           </Text>
           <Pressable
             onPress={handleOpenSms}
@@ -135,7 +153,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'failed' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText]}>
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
             {dispatchRecord?.error || 'Network error prevented sending emergency alert.'}
           </Text>
           <Pressable
@@ -151,7 +169,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'no_contacts' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText]}>
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
             No emergency contacts have been registered to receive accident alerts.
           </Text>
           {onAddContacts ? (
@@ -169,23 +187,23 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'below_threshold' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText]}>
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
             Impact confidence ({((dispatchRecord?.confidence || 0) * 100).toFixed(0)}%) is below the configured threshold ({((dispatchRecord?.threshold || 0) * 100).toFixed(0)}%).
           </Text>
           <Pressable
             onPress={handleSendAnyway}
             accessibilityRole="button"
             accessibilityLabel="Send alert to contacts anyway"
-            style={[styles.button, { backgroundColor: colors.card }]}
+            style={[styles.button, { backgroundColor: isDark ? '#1E293B' : colors.card, borderWidth: 1, borderColor: colors.border }]}
           >
-            <Text style={styles.buttonText}>Alert Contacts Anyway</Text>
+            <Text style={[styles.buttonText, { color: colors.text }]}>Alert Contacts Anyway</Text>
           </Pressable>
         </View>
       ) : null}
 
       {!status ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText]}>
+          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
             Trigger notification to registered emergency contacts with map location.
           </Text>
           <Pressable
@@ -223,7 +241,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
   },
   badge: {
     paddingHorizontal: 8,
@@ -231,7 +248,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
-    color: colors.text,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -240,11 +256,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   highlight: {
-    color: colors.text,
     fontWeight: '600',
   },
   code: {
-    color: colors.primary,
     fontFamily: 'monospace',
     fontSize: 11,
   },
@@ -271,7 +285,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   errorText: {
-    color: colors.danger,
+    color: '#DC2626',
     fontSize: 12,
     marginTop: 4,
   },

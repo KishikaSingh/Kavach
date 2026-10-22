@@ -1,12 +1,16 @@
 // Small coloured pill. tone: 'teal' | 'green' | 'red' | 'orange' | 'grey' | 'blue'.
+// Dynamic Theme-aware component.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getTone, radius, spacing } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, spacing } from '../theme/index.js';
 
 export default function StatusBadge({ label = 'Unavailable', tone = 'grey', icon, style, textStyle }) {
+  const { getTone } = useTheme();
   const safeTone = tone || 'grey';
   const t = getTone(safeTone);
+
   return (
     <View style={[styles.badge, { backgroundColor: t.bg, borderColor: t.border || t.bg }, style]}>
       {icon ? (

@@ -8,7 +8,8 @@ import { AccidentAlertCard } from '../components/AccidentAlertCard.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
 import DemoModeBanner from '../components/DemoModeBanner.js';
 import ScreenContainer from '../components/ScreenContainer.js';
-import { colors, radius, shadows, spacing, typography } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, shadows, spacing, typography } from '../constants/theme';
 import { PERSON2_ROUTES } from './person2Routes.js';
 
 const FILTERS = [
@@ -18,6 +19,7 @@ const FILTERS = [
 ];
 
 export function AlertsScreen({ navigation }) {
+  const { colors, isDark } = useTheme();
   const { alerts, activeAlerts, loading, error, refresh, refreshing, retry } = useAlerts();
   const { dataSource, backendReachable } = useDevice();
   const { isDemo } = useDemoControls();
@@ -40,7 +42,7 @@ export function AlertsScreen({ navigation }) {
   if (error && !alerts.length) return <ErrorState error={error} onRetry={retry} />;
 
   return (
-    <ScreenContainer style={styles.screen} scroll={false} contentContainerStyle={styles.containerPadding}>
+    <ScreenContainer style={[styles.screen, { backgroundColor: colors.background }]} scroll={false} contentContainerStyle={styles.containerPadding}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
@@ -50,14 +52,14 @@ export function AlertsScreen({ navigation }) {
           <View style={styles.headerArea}>
             <View style={styles.titleRow}>
               <View>
-                <Text style={styles.title} accessibilityRole="header">
+                <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
                   Safety Alerts
                 </Text>
-                <Text style={styles.subtitle}>Incident history and emergency logs</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Incident history and emergency logs</Text>
               </View>
               {activeAlerts.length > 0 ? (
-                <View style={styles.activeBadge}>
-                  <Text style={styles.activeBadgeText}>{activeAlerts.length} ACTIVE</Text>
+                <View style={[styles.activeBadge, { backgroundColor: colors.emergencySurface, borderColor: colors.emergencyBorder }]}>
+                  <Text style={[styles.activeBadgeText, { color: colors.emergency }]}>{activeAlerts.length} ACTIVE</Text>
                 </View>
               ) : null}
             </View>
@@ -73,9 +75,9 @@ export function AlertsScreen({ navigation }) {
             {error ? <StatusBanner tone="danger">{error.message}</StatusBanner> : null}
 
             {activeAlerts.length ? (
-              <View style={styles.activeAlertNotice}>
+              <View style={[styles.activeAlertNotice, { backgroundColor: colors.emergencySurface, borderColor: colors.emergencyBorder }]}>
                 <Ionicons name="alert-circle" size={18} color={colors.emergency} style={{ marginRight: 6 }} />
-                <Text style={styles.activeAlertNoticeText}>
+                <Text style={[styles.activeAlertNoticeText, { color: colors.emergency }]}>
                   {activeAlerts.length} active emergency alert{activeAlerts.length === 1 ? '' : 's'}. Viewing does not resolve them.
                 </Text>
               </View>
@@ -91,9 +93,23 @@ export function AlertsScreen({ navigation }) {
                     accessibilityRole="tab"
                     accessibilityState={{ selected: isActive }}
                     accessibilityLabel={`Filter ${f.label}`}
-                    style={[styles.chip, isActive && styles.chipOn]}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: isActive ? colors.safetyTeal : (isDark ? colors.cardElevated : colors.card),
+                        borderColor: isActive ? colors.safetyTeal : colors.border,
+                      },
+                    ]}
                   >
-                    <Text style={[styles.chipText, isActive && styles.chipTextOn]}>{f.label}</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: isActive ? colors.white : colors.textSecondary },
+                        isActive && styles.chipTextOn,
+                      ]}
+                    >
+                      {f.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -119,7 +135,6 @@ export function AlertsScreen({ navigation }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   containerPadding: {
     padding: 0,
@@ -140,23 +155,18 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.title,
-    color: colors.midnightNavy,
   },
   subtitle: {
     fontSize: 13,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   activeBadge: {
-    backgroundColor: 'rgba(229, 72, 77, 0.12)',
-    borderColor: 'rgba(229, 72, 77, 0.3)',
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.pill,
   },
   activeBadgeText: {
-    color: colors.emergency,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.4,
@@ -167,8 +177,6 @@ const styles = StyleSheet.create({
   activeAlertNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.sm + 2,
@@ -178,7 +186,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     fontWeight: '600',
-    color: colors.emergency,
   },
   filters: {
     flexDirection: 'row',
@@ -187,25 +194,18 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   chip: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: 16,
     paddingVertical: 8,
     ...shadows.sm,
   },
-  chipOn: {
-    backgroundColor: colors.midnightNavy,
-    borderColor: colors.midnightNavy,
-  },
   chipText: {
-    color: colors.textSecondary,
     fontWeight: '700',
     fontSize: 13,
   },
   chipTextOn: {
-    color: colors.white,
+    fontWeight: '800',
   },
 });
 

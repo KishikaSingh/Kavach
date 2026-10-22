@@ -1,8 +1,11 @@
 // Compact MetricCard for Dashboard telemetry and status metrics.
+// Dynamic Theme-aware component with guaranteed surface rendering.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, getTone, radius, shadows, spacing, typography } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { typography } from '../theme/typography.js';
+import { shadows, spacing } from '../theme/index.js';
 
 export default function MetricCard({
   icon,
@@ -13,22 +16,22 @@ export default function MetricCard({
   onPress,
   style,
 }) {
+  const { colors, getTone } = useTheme();
   const isPressable = typeof onPress === 'function';
-  const Container = isPressable ? Pressable : View;
   const t = getTone(tone);
 
-  return (
-    <Container
-      onPress={onPress}
-      accessibilityRole={isPressable ? 'button' : undefined}
-      accessibilityLabel={`${label}: ${value}`}
-      style={({ pressed }) => [
-        styles.card,
-        shadows.card,
-        pressed && isPressable && styles.pressed,
-        style,
-      ]}
-    >
+  const cardStyle = [
+    styles.card,
+    {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+    },
+    shadows.card,
+    style,
+  ];
+
+  const content = (
+    <>
       <View style={styles.topRow}>
         <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
           <Ionicons name={icon} size={20} color={t.fg} />
@@ -36,24 +39,45 @@ export default function MetricCard({
         <Text style={[styles.statusTag, { color: t.fg }]}>{value}</Text>
       </View>
 
-      <Text style={styles.label} numberOfLines={1}>
+      <Text style={[styles.label, { color: colors.text }]} numberOfLines={1}>
         {label}
       </Text>
       {sublabel ? (
-        <Text style={styles.sublabel} numberOfLines={1}>
+        <Text style={[styles.sublabel, { color: colors.textSecondary }]} numberOfLines={1}>
           {sublabel}
         </Text>
       ) : null}
-    </Container>
+    </>
+  );
+
+  if (isPressable) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}: ${value}`}
+        style={({ pressed }) => [cardStyle, pressed && styles.pressed]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View
+      accessibilityRole="summary"
+      accessibilityLabel={`${label}: ${value}`}
+      style={cardStyle}
+    >
+      {content}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.md + 2,
     flex: 1,
     minHeight: 96,
@@ -81,16 +105,14 @@ const styles = StyleSheet.create({
   label: {
     ...typography.cardTitle,
     fontSize: 14,
-    color: colors.text,
   },
   sublabel: {
     ...typography.supporting,
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.88,
     transform: [{ scale: 0.99 }],
   },
 });

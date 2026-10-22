@@ -1,9 +1,10 @@
 // Kavach Reusable AppCard Component
-// Supports 'default' (white card with subtle border), 'hero' (midnight navy container), and 'surface' styles.
+// Dynamic Theme-aware card container supporting 'default', 'hero', 'surface', 'outlined', 'teal', and 'emergency' variants.
 
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { colors, radius, shadows, spacing } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { shadows, spacing } from '../theme/index.js';
 
 export default function AppCard({
   children,
@@ -14,74 +15,86 @@ export default function AppCard({
   accessibilityRole,
   accessibilityLabel,
 }) {
+  const { colors, isDark } = useTheme();
   const isPressable = typeof onPress === 'function';
-  const Container = isPressable ? Pressable : View;
+
+  const dynamicStyles = {
+    default: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    hero: {
+      backgroundColor: isDark ? colors.cardElevated : colors.midnightNavy,
+      borderColor: isDark ? colors.border : colors.deepNavy,
+      borderWidth: 1,
+      borderRadius: 22,
+    },
+    surface: {
+      backgroundColor: colors.mutedSurface,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    outlined: {
+      backgroundColor: 'transparent',
+      borderColor: colors.border,
+      borderWidth: 1.5,
+    },
+    teal: {
+      backgroundColor: colors.primarySoft,
+      borderColor: isDark ? colors.primary : '#B2EBF2',
+      borderWidth: 1,
+    },
+    emergency: {
+      backgroundColor: colors.emergencySurface,
+      borderColor: colors.emergencyBorder,
+      borderWidth: 1,
+    },
+  };
+
+  const selectedVariantStyle = dynamicStyles[variant] || dynamicStyles.default;
 
   const cardStyle = [
     styles.base,
-    variant === 'hero' && styles.hero,
-    variant === 'surface' && styles.surface,
-    variant === 'outlined' && styles.outlined,
-    variant === 'teal' && styles.teal,
-    variant === 'emergency' && styles.emergency,
-    variant === 'default' && styles.default,
+    selectedVariantStyle,
     shadows.card,
     style,
   ];
 
+  if (isPressable) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole={accessibilityRole || 'button'}
+        accessibilityLabel={accessibilityLabel}
+        style={({ pressed }) => [cardStyle, pressed && styles.pressed]}
+      >
+        <View style={[styles.inner, contentStyle]}>{children}</View>
+      </Pressable>
+    );
+  }
+
   return (
-    <Container
-      onPress={onPress}
-      accessibilityRole={accessibilityRole || (isPressable ? 'button' : undefined)}
+    <View
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [cardStyle, pressed && isPressable && styles.pressed]}
+      style={cardStyle}
     >
       <View style={[styles.inner, contentStyle]}>{children}</View>
-    </Container>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.lg,
+    borderRadius: 18,
     overflow: 'hidden',
-  },
-  default: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  hero: {
-    backgroundColor: colors.midnightNavy,
-    borderWidth: 1,
-    borderColor: colors.deepNavy,
-    borderRadius: radius.xl,
-  },
-  surface: {
-    backgroundColor: colors.mutedSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  outlined: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  teal: {
-    backgroundColor: colors.primarySoft,
-    borderWidth: 1,
-    borderColor: '#B2EBF2',
-  },
-  emergency: {
-    backgroundColor: colors.emergencySoft,
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
   },
   inner: {
     padding: spacing.lg,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.88,
     transform: [{ scale: 0.995 }],
   },
 });

@@ -1,7 +1,8 @@
-// Design tokens for the Smart Helmet app — unified Kavach Design System.
-// Convention: teal/green = safe/connected, red = accident/emergency, orange = warning, grey = unknown/unavailable.
+// Backward compatibility re-export from unified theme system
 import {
   colors,
+  lightColors,
+  darkColors,
   spacing,
   radius,
   MIN_TOUCH,
@@ -9,10 +10,18 @@ import {
   shadows,
   tones,
   getTone,
+  lightTheme,
+  darkTheme,
+  ThemeProvider,
+  useTheme,
+  ThemeContext,
+  THEME_STORAGE_KEY,
 } from '../theme/index.js';
 
 export {
   colors,
+  lightColors,
+  darkColors,
   spacing,
   radius,
   MIN_TOUCH,
@@ -20,6 +29,12 @@ export {
   shadows,
   tones,
   getTone,
+  lightTheme,
+  darkTheme,
+  ThemeProvider,
+  useTheme,
+  ThemeContext,
+  THEME_STORAGE_KEY,
 };
 
 export default {

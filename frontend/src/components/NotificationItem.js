@@ -1,9 +1,11 @@
 // One row in the Notifications list. `demo` adds a Demo label (a local notification
 // does not prove a real hardware event).
+// Dynamic Theme-aware component.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, getTone, radius, shadows, spacing } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, shadows, spacing } from '../constants/theme';
 import { timeAgo } from '../utils/formatTime';
 
 const TYPE_META = {
@@ -15,8 +17,10 @@ const TYPE_META = {
 };
 
 export default function NotificationItem({ item, demo, onPress }) {
+  const { colors, getTone } = useTheme();
   const meta = TYPE_META[item.type] || { icon: 'notifications-outline', tone: 'grey', label: 'Notice' };
   const t = getTone(meta.tone);
+
   return (
     <Pressable
       onPress={onPress}
@@ -24,8 +28,12 @@ export default function NotificationItem({ item, demo, onPress }) {
       accessibilityLabel={`${item.title}. ${item.read ? 'Read' : 'Unread'}`}
       style={({ pressed }) => [
         styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
         shadows.sm,
-        !item.read && styles.unread,
+        !item.read && [styles.unread, { borderLeftColor: colors.safetyTeal }],
         pressed && styles.pressed,
       ]}
     >
@@ -34,20 +42,27 @@ export default function NotificationItem({ item, demo, onPress }) {
       </View>
       <View style={styles.body}>
         <View style={styles.titleRow}>
-          <Text style={[styles.title, !item.read && styles.titleUnread]} numberOfLines={1}>
+          <Text
+            style={[
+              styles.title,
+              { color: colors.text },
+              !item.read && styles.titleUnread,
+            ]}
+            numberOfLines={1}
+          >
             {item.title}
           </Text>
-          {!item.read ? <View style={styles.dot} /> : null}
+          {!item.read ? <View style={[styles.dot, { backgroundColor: colors.safetyTeal }]} /> : null}
         </View>
         {item.body ? (
-          <Text style={styles.text} numberOfLines={2}>
+          <Text style={[styles.text, { color: colors.textSecondary }]} numberOfLines={2}>
             {item.body}
           </Text>
         ) : null}
         <View style={styles.metaRow}>
-          <Text style={styles.meta}>{meta.label}</Text>
-          <Text style={styles.meta}> · {timeAgo(item.timestamp)}</Text>
-          {demo ? <Text style={styles.demo}> · Demo</Text> : null}
+          <Text style={[styles.meta, { color: colors.textMuted }]}>{meta.label}</Text>
+          <Text style={[styles.meta, { color: colors.textMuted }]}> · {timeAgo(item.timestamp)}</Text>
+          {demo ? <Text style={[styles.demo, { color: colors.warning }]}> · Demo</Text> : null}
         </View>
       </View>
     </Pressable>
@@ -57,10 +72,8 @@ export default function NotificationItem({ item, demo, onPress }) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.md,
     marginBottom: spacing.sm,
     minHeight: 68,
@@ -68,10 +81,9 @@ const styles = StyleSheet.create({
   },
   unread: {
     borderLeftWidth: 4,
-    borderLeftColor: colors.safetyTeal,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.88,
   },
   iconWrap: {
     width: 42,
@@ -92,22 +104,18 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: colors.midnightNavy,
   },
   titleUnread: {
     fontWeight: '800',
-    color: colors.midnightNavy,
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.safetyTeal,
     marginLeft: spacing.sm,
   },
   text: {
     fontSize: 13,
-    color: colors.textSecondary,
     marginTop: 2,
     lineHeight: 18,
   },
@@ -118,11 +126,9 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 11,
-    color: colors.textMuted,
   },
   demo: {
     fontSize: 11,
-    color: colors.warning,
     fontWeight: '700',
   },
 });

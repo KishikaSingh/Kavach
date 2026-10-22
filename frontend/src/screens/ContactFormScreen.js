@@ -14,10 +14,13 @@ import { EmptyState, LoadingState, StatusBanner } from '../components/ScreenStat
 import ScreenHeader from '../components/ScreenHeader.js';
 import AppCard from '../components/AppCard.js';
 import AppButton from '../components/AppButton.js';
-import { colors, radius, spacing } from '../constants/theme';
+import { radius, spacing } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme.js';
 import { normalizePhone, validateName } from '../utils/validators.js';
 
 export function ContactFormScreen({ route, navigation }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const contactId = route?.params?.contactId;
   const { contacts, loading, addContact, updateContact, deleteContact } = useContacts();
   const existing = useMemo(
@@ -25,12 +28,14 @@ export function ContactFormScreen({ route, navigation }) {
     [contacts, contactId]
   );
 
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState(existing?.name || '');
+  const [phone, setPhone] = useState(existing?.phone || '');
   const [nameError, setNameError] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   useEffect(() => {
     if (!existing) return;
@@ -205,7 +210,7 @@ export function ContactFormScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors, isDark) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -236,7 +241,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.md,
-    color: colors.midnightNavy,
+    color: colors.text,
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
     fontSize: 16,

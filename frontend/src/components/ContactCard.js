@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadows, spacing } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, shadows, spacing } from '../theme/index.js';
 
 export function ContactCard({
   contact,
@@ -11,12 +12,24 @@ export function ContactCard({
   onDelete,
   busy = false,
 }) {
+  const { colors } = useTheme();
+
   if (!contact) return null;
   const primary = !!contact.isPrimary;
   const initial = contact.name ? contact.name.charAt(0).toUpperCase() : 'C';
 
   return (
-    <View style={[styles.card, shadows.sm, primary && styles.primaryBorder]}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: primary ? colors.safetyTeal : colors.border,
+        },
+        shadows.sm,
+        primary && styles.primaryBorder,
+      ]}
+    >
       <Pressable
         onPress={() => onPress?.(contact)}
         accessibilityRole="button"
@@ -25,31 +38,35 @@ export function ContactCard({
         style={styles.cardHeader}
       >
         <View style={styles.topRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
+          <View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}>
+            <Text style={[styles.avatarText, { color: colors.safetyTeal }]}>{initial}</Text>
           </View>
           <View style={styles.infoCol}>
             <View style={styles.nameRow}>
-              <Text style={styles.name}>{contact.name}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{contact.name}</Text>
               {primary ? (
-                <View style={styles.badge} accessibilityLabel="Primary emergency contact">
-                  <Text style={styles.badgeText}>PRIMARY</Text>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.primarySoft }]}
+                  accessibilityLabel="Primary emergency contact"
+                >
+                  <Text style={[styles.badgeText, { color: colors.safetyTeal }]}>PRIMARY</Text>
                 </View>
               ) : null}
             </View>
-            <Text style={styles.phone}>{contact.phone}</Text>
+            <Text style={[styles.phone, { color: colors.textSecondary }]}>{contact.phone}</Text>
           </View>
           <Ionicons name="create-outline" size={20} color={colors.textMuted} />
         </View>
       </Pressable>
 
-      <View style={styles.actions}>
+      <View style={[styles.actions, { borderTopColor: colors.border }]}>
         <Action
           label="Call"
           icon="call"
           variant="call"
           onPress={() => onCall?.(contact)}
           disabled={busy}
+          colors={colors}
         />
         {!primary ? (
           <Action
@@ -58,6 +75,7 @@ export function ContactCard({
             variant="default"
             onPress={() => onSetPrimary?.(contact)}
             disabled={busy}
+            colors={colors}
           />
         ) : null}
         <Action
@@ -66,15 +84,27 @@ export function ContactCard({
           variant="danger"
           onPress={() => onDelete?.(contact)}
           disabled={busy}
+          colors={colors}
         />
       </View>
     </View>
   );
 }
 
-function Action({ label, icon, variant = 'default', onPress, disabled }) {
+function Action({ label, icon, variant = 'default', onPress, disabled, colors }) {
   const isCall = variant === 'call';
   const isDanger = variant === 'danger';
+
+  let bg = colors.mutedSurface;
+  let fg = colors.text;
+
+  if (isCall) {
+    bg = colors.successSurface;
+    fg = colors.success;
+  } else if (isDanger) {
+    bg = colors.emergencySurface;
+    fg = colors.emergency;
+  }
 
   return (
     <Pressable
@@ -85,8 +115,7 @@ function Action({ label, icon, variant = 'default', onPress, disabled }) {
       accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.action,
-        isCall && styles.actionCall,
-        isDanger && styles.actionDanger,
+        { backgroundColor: bg },
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
       ]}
@@ -95,17 +124,11 @@ function Action({ label, icon, variant = 'default', onPress, disabled }) {
         <Ionicons
           name={icon}
           size={14}
-          color={isCall ? colors.success : isDanger ? colors.emergency : colors.midnightNavy}
+          color={fg}
           style={styles.actionIcon}
         />
       ) : null}
-      <Text
-        style={[
-          styles.actionText,
-          isCall && styles.actionTextCall,
-          isDanger && styles.actionTextDanger,
-        ]}
-      >
+      <Text style={[styles.actionText, { color: fg }]}>
         {label}
       </Text>
     </Pressable>
@@ -114,17 +137,13 @@ function Action({ label, icon, variant = 'default', onPress, disabled }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   primaryBorder: {
-    borderColor: 'rgba(0, 184, 169, 0.4)',
     borderLeftWidth: 4,
-    borderLeftColor: colors.safetyTeal,
   },
   cardHeader: {
     marginBottom: spacing.sm,
@@ -137,13 +156,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   avatarText: {
-    color: colors.safetyTeal,
     fontSize: 18,
     fontWeight: '800',
   },
@@ -157,23 +174,19 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.midnightNavy,
   },
   badge: {
-    backgroundColor: colors.primarySoft,
     borderRadius: radius.pill,
     paddingHorizontal: 7,
     paddingVertical: 2,
     marginLeft: 6,
   },
   badgeText: {
-    color: colors.safetyTeal,
     fontSize: 10,
     fontWeight: '800',
   },
   phone: {
     fontSize: 13,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   actions: {
@@ -183,21 +196,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
   },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.mutedSurface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm + 2,
     paddingVertical: 7,
-  },
-  actionCall: {
-    backgroundColor: '#E8F5E9',
-  },
-  actionDanger: {
-    backgroundColor: '#FEE2E2',
   },
   actionIcon: {
     marginRight: 4,
@@ -209,15 +214,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   actionText: {
-    color: colors.midnightNavy,
     fontWeight: '700',
     fontSize: 12,
-  },
-  actionTextCall: {
-    color: colors.success,
-  },
-  actionTextDanger: {
-    color: colors.emergency,
   },
 });
 

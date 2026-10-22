@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppButton from '../components/AppButton.js';
 import { ONBOARDING_KEY } from './SplashScreen.js';
-import { colors, spacing, typography, MIN_TOUCH } from '../theme/index.js';
+import { spacing, typography, MIN_TOUCH } from '../theme/index.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 const SLIDES = [
   {
@@ -33,6 +34,8 @@ const SLIDES = [
 ];
 
 export default function OnboardingScreen({ navigation }) {
+  const { theme, isDark } = useTheme();
+  const { colors } = theme;
   const { width } = useWindowDimensions();
   const listRef = useRef(null);
   const [index, setIndex] = useState(0);
@@ -52,13 +55,15 @@ export default function OnboardingScreen({ navigation }) {
     listRef.current?.scrollToIndex({ index: index + 1, animated: true });
   };
 
+  const styles = React.useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+
   return (
     <SafeAreaView style={styles.safe}>
       {/* Top Bar with Skip */}
       <View style={styles.topBar}>
         <View style={styles.brandRow}>
           <View style={styles.miniShield}>
-            <Ionicons name="shield-checkmark" size={16} color={colors.white} />
+            <Ionicons name="shield-checkmark" size={16} color="#FFFFFF" />
           </View>
           <Text style={styles.brandText}>KAVACH</Text>
         </View>
@@ -117,7 +122,7 @@ export default function OnboardingScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors, isDark) => StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
@@ -145,7 +150,7 @@ const styles = StyleSheet.create({
   brandText: {
     fontSize: 15,
     fontWeight: '800',
-    color: colors.midnightNavy,
+    color: colors.text,
     letterSpacing: 1,
   },
   skip: {
@@ -187,9 +192,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.midnightNavy,
+    shadowColor: isDark ? '#000000' : colors.midnightNavy,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0.3 : 0.08,
     shadowRadius: 10,
     elevation: 3,
   },

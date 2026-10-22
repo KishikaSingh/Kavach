@@ -10,7 +10,8 @@ import StatusBadge from '../components/StatusBadge.js';
 import AppCard from '../components/AppCard.js';
 import AppButton from '../components/AppButton.js';
 import ConfirmationDialog from '../components/ConfirmationDialog.js';
-import { colors, radius, shadows, spacing } from '../constants/theme';
+import { radius, shadows, spacing } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme.js';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 
 const SMS_COPY = {
@@ -27,6 +28,8 @@ const STATUS_COPY = {
 };
 
 export function AlertDetailsScreen({ route, navigation }) {
+  const { theme } = useTheme();
+  const { colors } = theme;
   const alertId = route?.params?.alertId;
   const { alerts, loading, error, retry, resolveAlert } = useAlerts();
   const [busy, setBusy] = useState(false);
@@ -34,6 +37,8 @@ export function AlertDetailsScreen({ route, navigation }) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const alert = useMemo(() => (alerts || []).find((a) => a.id === alertId) || null, [alerts, alertId]);
+
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleResolveAction = async () => {
     setShowConfirm(false);
@@ -188,7 +193,7 @@ export function AlertDetailsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -227,7 +232,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: colors.midnightNavy,
+    color: colors.text,
   },
   heroSeverity: {
     fontSize: 11,

@@ -1,10 +1,11 @@
 // Safe-area wrapper with optional scrolling and pull-to-refresh.
 // Tab screens use the default edges (top only; the tab bar handles the bottom).
-// Stack screens that show a native header should pass edges={['bottom']}.
+// Dynamic Theme-aware background.
 import React from 'react';
 import { ScrollView, RefreshControl, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { spacing } from '../constants/theme';
 
 export default function ScreenContainer({
   children,
@@ -15,8 +16,10 @@ export default function ScreenContainer({
   contentContainerStyle,
   style,
 }) {
+  const { colors } = useTheme();
+
   return (
-    <SafeAreaView style={[styles.safe, style]} edges={edges}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }, style]} edges={edges}>
       {scroll ? (
         <ScrollView
           contentContainerStyle={[styles.content, contentContainerStyle]}
@@ -43,7 +46,14 @@ export default function ScreenContainer({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  safe: {
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
 });

@@ -9,6 +9,7 @@ export { default as ConfirmationDialog } from './ConfirmationDialog.js';
 export { default as DemoModeBanner } from './DemoModeBanner.js';
 export { default as ScreenContainer } from './ScreenContainer.js';
 export { default as DeviceHealthCard } from './DeviceHealthCard.js';
+export { default as ThemeSelector } from './ThemeSelector.js';
 
 export { LocationPreview } from './LocationPreview.js';
 export { AccidentAlertCard } from './AccidentAlertCard.js';

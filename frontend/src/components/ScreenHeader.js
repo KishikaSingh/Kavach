@@ -1,10 +1,12 @@
 // Kavach Reusable ScreenHeader Component
 // Header with optional back button, title, subtitle, and right-hand action icon.
+// Dynamic Theme-aware component.
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, MIN_TOUCH } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { spacing, typography, MIN_TOUCH } from '../theme/index.js';
 
 export default function ScreenHeader({
   title,
@@ -13,11 +15,23 @@ export default function ScreenHeader({
   rightIcon,
   onRightPress,
   rightLabel,
-  dark = false,
+  dark,
   style,
 }) {
+  const { colors, isDark } = useTheme();
+  const isDarkMode = dark !== undefined ? dark : isDark;
+
   return (
-    <View style={[styles.header, dark && styles.headerDark, style]}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: isDarkMode ? colors.card : colors.card,
+          borderBottomColor: colors.border,
+        },
+        style,
+      ]}
+    >
       <View style={styles.leftRow}>
         {onBack ? (
           <Pressable
@@ -30,13 +44,13 @@ export default function ScreenHeader({
             <Ionicons
               name="arrow-back"
               size={22}
-              color={dark ? colors.white : colors.text}
+              color={colors.text}
             />
           </Pressable>
         ) : null}
         <View style={styles.titleWrap}>
           <Text
-            style={[styles.title, dark && styles.titleDark]}
+            style={[styles.title, { color: colors.text }]}
             numberOfLines={1}
             accessibilityRole="header"
           >
@@ -44,7 +58,7 @@ export default function ScreenHeader({
           </Text>
           {subtitle ? (
             <Text
-              style={[styles.subtitle, dark && styles.subtitleDark]}
+              style={[styles.subtitle, { color: colors.textSecondary }]}
               numberOfLines={1}
             >
               {subtitle}
@@ -64,7 +78,7 @@ export default function ScreenHeader({
           <Ionicons
             name={rightIcon}
             size={22}
-            color={dark ? colors.cyanAccent : colors.primary}
+            color={colors.text}
           />
         </Pressable>
       ) : null}
@@ -77,12 +91,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background,
-  },
-  headerDark: {
-    backgroundColor: colors.midnightNavy,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    minHeight: 56,
   },
   leftRow: {
     flexDirection: 'row',
@@ -90,35 +102,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backBtn: {
-    minWidth: MIN_TOUCH,
-    minHeight: MIN_TOUCH,
+    width: MIN_TOUCH,
+    height: MIN_TOUCH,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
   },
   titleWrap: {
     flex: 1,
+    justifyContent: 'center',
   },
   title: {
     ...typography.title,
-    color: colors.text,
-  },
-  titleDark: {
-    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
   },
   subtitle: {
     ...typography.supporting,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  subtitleDark: {
-    color: '#B8C4DE',
+    fontSize: 12,
+    marginTop: 1,
   },
   rightBtn: {
-    minWidth: MIN_TOUCH,
-    minHeight: MIN_TOUCH,
+    width: MIN_TOUCH,
+    height: MIN_TOUCH,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.sm,
   },
 });

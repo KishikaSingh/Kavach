@@ -1,18 +1,12 @@
 // Primary button. variant: 'primary' | 'secondary' | 'danger' | 'navy' | 'ghost'.
 // Follows Kavach Safety-Tech design tokens. Min height 48 (>= 44 touch target).
+// Dynamic Theme-aware component.
 
 import React from 'react';
 import { Pressable, Text, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing } from '../theme/index.js';
-
-const VARIANTS = {
-  primary: { bg: colors.safetyTeal, fg: colors.white, border: colors.safetyTeal },
-  secondary: { bg: colors.white, fg: colors.text, border: colors.border },
-  danger: { bg: colors.emergency, fg: colors.white, border: colors.emergency },
-  navy: { bg: colors.midnightNavy, fg: colors.white, border: colors.midnightNavy },
-  ghost: { bg: 'transparent', fg: colors.safetyTeal, border: 'transparent' },
-};
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, spacing } from '../theme/index.js';
 
 export default function AppButton({
   title,
@@ -26,6 +20,36 @@ export default function AppButton({
   textStyle,
   accessibilityLabel,
 }) {
+  const { colors, isDark } = useTheme();
+
+  const VARIANTS = {
+    primary: {
+      bg: colors.safetyTeal,
+      fg: colors.white,
+      border: colors.safetyTeal,
+    },
+    secondary: {
+      bg: isDark ? colors.cardElevated : colors.card,
+      fg: colors.text,
+      border: colors.border,
+    },
+    danger: {
+      bg: colors.emergency,
+      fg: colors.white,
+      border: colors.emergency,
+    },
+    navy: {
+      bg: isDark ? colors.cardElevated : colors.midnightNavy,
+      fg: colors.white,
+      border: isDark ? colors.border : colors.midnightNavy,
+    },
+    ghost: {
+      bg: 'transparent',
+      fg: colors.safetyTeal,
+      border: 'transparent',
+    },
+  };
+
   const v = VARIANTS[variant] || VARIANTS.primary;
   const inactive = disabled || loading;
 
@@ -75,12 +99,12 @@ const styles = StyleSheet.create({
   },
   btnMd: {
     minHeight: 48,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 12,
   },
   btnLg: {
     minHeight: 54,
-    paddingHorizontal: spacing.xxl,
+    paddingHorizontal: spacing.xl,
     paddingVertical: 14,
   },
   row: {
@@ -89,11 +113,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   icon: {
-    marginRight: spacing.sm,
+    marginRight: 8,
   },
   text: {
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   textSm: {
     fontSize: 13,

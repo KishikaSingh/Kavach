@@ -14,6 +14,7 @@ export const Pressable = 'Pressable';
 export const ActivityIndicator = 'ActivityIndicator';
 export const ScrollView = 'ScrollView';
 export const RefreshControl = 'RefreshControl';
+export const useColorScheme = () => 'light';
 
 export default {
   Platform,
@@ -26,4 +27,5 @@ export default {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  useColorScheme,
 };

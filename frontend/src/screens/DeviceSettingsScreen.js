@@ -1,5 +1,7 @@
-// Settings tab: device health + warnings + notification toggles.
+// Settings tab: device health + warnings + notification toggles + theme appearance.
 // Unsupported items (accident threshold, battery) are labelled Unavailable / Coming soon, never faked.
+// Dynamic Theme-aware component with null-safe handling.
+
 import React, { useCallback, useState } from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,15 +14,18 @@ import ErrorState from '../components/ErrorState';
 import AppButton from '../components/AppButton';
 import Loader from '../components/Loader';
 import ProfileRow from '../components/ProfileRow';
+import ThemeSelector from '../components/ThemeSelector';
 
 import useDevice from '../hooks/useDevice';
 import useSettings from '../hooks/useSettings';
+import { useTheme } from '../theme/ThemeProvider';
 
-import { colors, radius, shadows, spacing, typography } from '../constants/theme';
+import { radius, shadows, spacing, typography } from '../constants/theme';
 import { formatDateTime, timeAgo } from '../utils/formatTime';
 import { getGpsState, GPS_LABELS } from '../utils/deviceStatus';
 
 export default function DeviceSettingsScreen() {
+  const { colors, isDark } = useTheme();
   const {
     device,
     dataSource,
@@ -76,7 +81,7 @@ export default function DeviceSettingsScreen() {
   if (!device && !deviceLoading) {
     return (
       <ScreenContainer onRefresh={onRefresh} refreshing={refreshing}>
-        <Text style={styles.title}>Device status</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Device status</Text>
         {dataSource === 'demo' ? <DemoBadge style={styles.demo} /> : null}
         <EmptyState
           icon="hardware-chip-outline"
@@ -132,21 +137,27 @@ export default function DeviceSettingsScreen() {
 
   return (
     <ScreenContainer onRefresh={onRefresh} refreshing={refreshing}>
-      <Text style={styles.title}>Device status</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Device status</Text>
       {dataSource === 'demo' ? <DemoBadge style={styles.demo} /> : null}
 
+      {/* Appearance Mode Section */}
+      <Text style={[styles.section, { color: colors.text }]}>Appearance</Text>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, shadows.card]}>
+        <ThemeSelector />
+      </View>
+
       {warnings.length > 0 ? (
-        <View style={styles.warnBox} accessibilityRole="alert">
+        <View style={[styles.warnBox, { backgroundColor: colors.warningSurface, borderColor: colors.warningBorder }]} accessibilityRole="alert">
           {warnings.map((w) => (
             <View key={w} style={styles.warnRow}>
               <Ionicons name="warning" size={16} color={colors.warning} style={styles.warnIcon} />
-              <Text style={styles.warnText}>{w}</Text>
+              <Text style={[styles.warnText, { color: colors.warning }]}>{w}</Text>
             </View>
           ))}
         </View>
       ) : null}
 
-      <Text style={styles.section}>Health</Text>
+      <Text style={[styles.section, { color: colors.text }]}>Health</Text>
       <DeviceHealthCard
         icon="hardware-chip-outline"
         label="ESP32 connection"
@@ -186,22 +197,22 @@ export default function DeviceSettingsScreen() {
         note={accidentThresholdNote}
       />
 
-      <Text style={styles.section}>Connection</Text>
-      <View style={[styles.card, shadows.card]}>
+      <Text style={[styles.section, { color: colors.text }]}>Connection</Text>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, shadows.card]}>
         <ProfileRow icon="finger-print-outline" label="Device identifier" value={device?.deviceId || 'Not available'} />
         <ProfileRow icon="cloud-outline" label="Backend connection" value={backend.v} />
         <ProfileRow icon="swap-horizontal-outline" label="Data source" value={dataSource === 'demo' ? 'Demo (simulated data)' : 'Live (helmet data)'} last />
       </View>
 
-      <Text style={styles.section}>Notification preferences</Text>
+      <Text style={[styles.section, { color: colors.text }]}>Notification preferences</Text>
 
       {settingsError ? (
-        <View style={styles.settingsErrorBox} accessibilityRole="alert">
+        <View style={[styles.settingsErrorBox, { backgroundColor: colors.emergencySurface, borderColor: colors.emergencyBorder }]} accessibilityRole="alert">
           <View style={styles.warnRow}>
             <Ionicons name="alert-circle-outline" size={18} color={colors.emergency} style={styles.warnIcon} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.settingsErrorTitle}>Settings unavailable</Text>
-              <Text style={styles.settingsErrorText}>
+              <Text style={[styles.settingsErrorTitle, { color: colors.emergency }]}>Settings unavailable</Text>
+              <Text style={[styles.settingsErrorText, { color: colors.textSecondary }]}>
                 {String(settingsError?.message || 'Could not load your notification preferences.')}
               </Text>
               {retrySettings ? (
@@ -220,7 +231,7 @@ export default function DeviceSettingsScreen() {
       ) : null}
 
       {saveError ? (
-        <View style={[styles.warnBox, { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', marginTop: spacing.sm }]} accessibilityRole="alert">
+        <View style={[styles.warnBox, { backgroundColor: colors.emergencySurface, borderColor: colors.emergencyBorder, marginTop: spacing.sm }]} accessibilityRole="alert">
           <View style={styles.warnRow}>
             <Ionicons name="alert-circle" size={16} color={colors.emergency} style={styles.warnIcon} />
             <Text style={[styles.warnText, { color: colors.emergency }]}>{saveError}</Text>
@@ -228,7 +239,7 @@ export default function DeviceSettingsScreen() {
         </View>
       ) : null}
 
-      <View style={[styles.card, shadows.card]}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, shadows.card]}>
         <ProfileRow
           icon="notifications-outline"
           label="Push notifications"
@@ -244,7 +255,7 @@ export default function DeviceSettingsScreen() {
               value={Boolean(pushEnabled)}
               onValueChange={setNotif('push')}
               disabled={!settings}
-              trackColor={{ true: colors.safetyTeal, false: '#CBD5E1' }}
+              trackColor={{ true: colors.safetyTeal, false: isDark ? '#334155' : '#CBD5E1' }}
               thumbColor={colors.white}
             />
           }
@@ -257,7 +268,7 @@ export default function DeviceSettingsScreen() {
               value={Boolean(soundEnabled)}
               onValueChange={setNotif('sound')}
               disabled={!settings}
-              trackColor={{ true: colors.safetyTeal, false: '#CBD5E1' }}
+              trackColor={{ true: colors.safetyTeal, false: isDark ? '#334155' : '#CBD5E1' }}
               thumbColor={colors.white}
             />
           }
@@ -273,20 +284,16 @@ export default function DeviceSettingsScreen() {
 const styles = StyleSheet.create({
   title: {
     ...typography.title,
-    color: colors.midnightNavy,
   },
   demo: {
     marginTop: spacing.sm,
   },
   section: {
     ...typography.heading,
-    color: colors.midnightNavy,
     marginTop: spacing.xl,
     marginBottom: spacing.sm,
   },
   warnBox: {
-    backgroundColor: '#FEF3DC',
-    borderColor: '#FCD34D',
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,
@@ -304,20 +311,15 @@ const styles = StyleSheet.create({
   warnText: {
     flex: 1,
     fontSize: 13,
-    color: colors.midnightNavy,
     lineHeight: 18,
   },
   card: {
-    backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs,
   },
   settingsErrorBox: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FCA5A5',
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,
@@ -326,12 +328,10 @@ const styles = StyleSheet.create({
   settingsErrorTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.emergency,
     marginBottom: 2,
   },
   settingsErrorText: {
     fontSize: 13,
-    color: colors.midnightNavy,
   },
   retryBtn: {
     marginTop: spacing.sm,

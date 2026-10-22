@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 import StatusBadge from './StatusBadge.js';
-import { colors, radius, shadows, spacing } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { radius, shadows, spacing } from '../theme/index.js';
 
 const SMS_COPY = {
   pending: { label: 'SMS Pending', tone: 'orange' },
@@ -19,6 +20,8 @@ const STATUS_COPY = {
 };
 
 export function AccidentAlertCard({ alert, onPress }) {
+  const { colors, isDark } = useTheme();
+
   if (!alert) return null;
   const severity = alert.severity || 'medium';
   const severityTone = severity === 'high' ? 'red' : severity === 'medium' ? 'orange' : 'grey';
@@ -39,8 +42,12 @@ export function AccidentAlertCard({ alert, onPress }) {
       accessibilityHint="Opens alert details. Viewing does not mark the alert as resolved."
       style={({ pressed }) => [
         styles.card,
+        {
+          backgroundColor: colors.card,
+          borderColor: isEmergency ? (isDark ? colors.emergency : 'rgba(180, 35, 50, 0.4)') : colors.border,
+        },
         shadows.sm,
-        isEmergency && styles.emergencyCard,
+        isEmergency && [styles.emergencyCard, { borderLeftColor: colors.emergency }],
         pressed && styles.pressed,
       ]}
     >
@@ -49,12 +56,10 @@ export function AccidentAlertCard({ alert, onPress }) {
           <StatusBadge
             label={`${severity.toUpperCase()} SEVERITY`}
             tone={severityTone}
-            size="sm"
           />
           <StatusBadge
             label={statusInfo.label}
             tone={statusInfo.tone}
-            size="sm"
             style={styles.statusBadgeMargin}
           />
         </View>
@@ -62,7 +67,12 @@ export function AccidentAlertCard({ alert, onPress }) {
       </View>
 
       <View style={styles.bodyRow}>
-        <View style={[styles.iconWrap, { backgroundColor: isEmergency ? 'rgba(229, 72, 77, 0.1)' : 'rgba(0, 184, 169, 0.1)' }]}>
+        <View
+          style={[
+            styles.iconWrap,
+            { backgroundColor: isEmergency ? colors.emergencySurface : colors.primarySoft },
+          ]}
+        >
           <Ionicons
             name={isEmergency ? 'alert-circle' : 'shield-checkmark'}
             size={22}
@@ -70,12 +80,12 @@ export function AccidentAlertCard({ alert, onPress }) {
           />
         </View>
         <View style={styles.textWrap}>
-          <Text style={styles.timestamp}>{formatDateTime(alert.timestamp)}</Text>
-          <Text style={styles.relativeTime}>{relativeTime(alert.timestamp)}</Text>
+          <Text style={[styles.timestamp, { color: colors.text }]}>{formatDateTime(alert.timestamp)}</Text>
+          <Text style={[styles.relativeTime, { color: colors.textSecondary }]}>{relativeTime(alert.timestamp)}</Text>
         </View>
       </View>
 
-      <View style={styles.footerRow}>
+      <View style={[styles.footerRow, { borderTopColor: colors.border }]}>
         <View style={styles.metaItem}>
           <Ionicons
             name={alert.gpsValid ? 'navigate' : 'navigate-outline'}
@@ -83,9 +93,9 @@ export function AccidentAlertCard({ alert, onPress }) {
             color={alert.gpsValid ? colors.safetyTeal : colors.textMuted}
             style={styles.metaIcon}
           />
-          <Text style={styles.metaText} numberOfLines={1}>{gpsLine}</Text>
+          <Text style={[styles.metaText, { color: colors.textSecondary }]} numberOfLines={1}>{gpsLine}</Text>
         </View>
-        <StatusBadge label={sms.label} tone={sms.tone} size="sm" />
+        <StatusBadge label={sms.label} tone={sms.tone} />
       </View>
     </Pressable>
   );
@@ -93,20 +103,16 @@ export function AccidentAlertCard({ alert, onPress }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   emergencyCard: {
-    borderColor: 'rgba(229, 72, 77, 0.35)',
     borderLeftWidth: 4,
-    borderLeftColor: colors.emergency,
   },
   pressed: {
-    opacity: 0.85,
+    opacity: 0.88,
     transform: [{ scale: 0.99 }],
   },
   headerRow: {
@@ -141,11 +147,9 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.midnightNavy,
   },
   relativeTime: {
     fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   footerRow: {
@@ -155,7 +159,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm + 2,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
   },
   metaItem: {
     flexDirection: 'row',
@@ -168,7 +171,6 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: colors.textSecondary,
   },
 });
 

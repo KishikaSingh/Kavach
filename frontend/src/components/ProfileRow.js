@@ -1,31 +1,39 @@
 // Settings-style row. Provide onPress (navigates/acts), `right` (e.g. a Switch), or neither (info row).
 // `comingSoon` greys the row and shows a label; it is never tappable.
+// Dynamic Theme-aware component.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, MIN_TOUCH } from '../constants/theme';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { spacing, MIN_TOUCH } from '../constants/theme';
 
 export default function ProfileRow({ icon, label, value, onPress, right, comingSoon = false, last = false }) {
+  const { colors } = useTheme();
   const tappable = !!onPress && !comingSoon;
   const Wrapper = tappable ? Pressable : View;
+
   return (
     <Wrapper
       onPress={tappable ? onPress : undefined}
       accessibilityRole={tappable ? 'button' : undefined}
-      style={[styles.row, !last && styles.divider, comingSoon && styles.dim]}
+      style={[
+        styles.row,
+        !last && [styles.divider, { borderBottomColor: colors.border }],
+        comingSoon && styles.dim,
+      ]}
     >
       <View style={styles.iconContainer}>
         <Ionicons name={icon} size={20} color={colors.safetyTeal} style={styles.icon} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
         {value ? (
-          <Text style={styles.value} numberOfLines={2}>
+          <Text style={[styles.value, { color: colors.textSecondary }]} numberOfLines={2}>
             {value}
           </Text>
         ) : null}
       </View>
-      {comingSoon ? <Text style={styles.soon}>Coming soon</Text> : null}
+      {comingSoon ? <Text style={[styles.soon, { color: colors.textMuted }]}>Coming soon</Text> : null}
       {right || null}
       {tappable ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
     </Wrapper>
@@ -47,10 +55,9 @@ const styles = StyleSheet.create({
   },
   divider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
   },
   dim: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   icon: {},
   body: {
@@ -60,16 +67,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.midnightNavy,
   },
   value: {
     fontSize: 13,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   soon: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textMuted,
   },
 });

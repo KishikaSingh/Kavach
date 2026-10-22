@@ -103,6 +103,22 @@ export function createElement(type, props, ...children) {
   };
 }
 
+export function createContext(defaultValue) {
+  const context = {
+    _currentValue: defaultValue,
+    Provider: ({ value, children }) => {
+      context._currentValue = value !== undefined ? value : defaultValue;
+      return children;
+    },
+    Consumer: ({ children }) => (typeof children === 'function' ? children(context._currentValue) : children),
+  };
+  return context;
+}
+
+export function useContext(context) {
+  return context ? context._currentValue : undefined;
+}
+
 export const Fragment = 'Fragment';
 
-export default { useState, useEffect, useMemo, useCallback, useRef, createElement, Fragment };
+export default { useState, useEffect, useMemo, useCallback, useRef, createElement, Fragment, createContext, useContext };

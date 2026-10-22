@@ -1,12 +1,16 @@
 // Section Header with optional action button.
+// Dynamic Theme-aware component.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '../theme/index.js';
+import { useTheme } from '../theme/ThemeProvider.js';
+import { spacing, typography } from '../theme/index.js';
 
 export default function SectionHeader({ title, actionLabel, onAction, style }) {
+  const { colors } = useTheme();
+
   return (
     <View style={[styles.row, style]}>
-      <Text style={styles.title} accessibilityRole="header">
+      <Text style={[styles.title, { color: colors.text }]} accessibilityRole="header">
         {title}
       </Text>
       {actionLabel && onAction ? (
@@ -16,7 +20,7 @@ export default function SectionHeader({ title, actionLabel, onAction, style }) {
           accessibilityRole="button"
           accessibilityLabel={actionLabel}
         >
-          <Text style={styles.actionText}>{actionLabel}</Text>
+          <Text style={[styles.actionText, { color: colors.safetyTeal }]}>{actionLabel}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -33,11 +37,9 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.heading,
-    color: colors.text,
   },
   actionText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.safetyTeal,
   },
 });

@@ -13,9 +13,12 @@ import DemoModeBanner from '../components/DemoModeBanner';
 
 import useNotifications from '../hooks/useNotifications';
 import useDevice from '../hooks/useDevice';
-import { colors, spacing } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme';
+import { spacing } from '../constants/theme';
 
 export default function NotificationsScreen({ navigation }) {
+  const { theme } = useTheme();
+  const { colors } = theme;
   const { notifications, unreadCount, loading, error, markRead, markAllRead, clearAll } = useNotifications();
   const { dataSource } = useDevice();
   const demo = dataSource === 'demo';
@@ -49,7 +52,7 @@ export default function NotificationsScreen({ navigation }) {
   const sorted = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title="Notifications"
         subtitle={unreadCount > 0 ? `${unreadCount} unread alert${unreadCount === 1 ? '' : 's'}` : 'System notices'}
@@ -100,7 +103,6 @@ export default function NotificationsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   flex: {
     flex: 1,
