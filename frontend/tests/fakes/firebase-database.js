@@ -51,6 +51,7 @@ export const __listenerCount = () => listeners.length;
 
 // ----- the part of the SDK the app uses -----
 export const getDatabase = () => ({});
+export const connectDatabaseEmulator = () => {};
 export const ref = (db, path = '') => ({ path: parts(path).join('/') });
 
 export function push(r, value) {

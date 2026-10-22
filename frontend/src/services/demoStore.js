@@ -88,6 +88,99 @@ export const demoStore = {
     return state.scenario;
   },
 
+  // Granular telemetry controls for hardware-free simulation
+  setBatteryLevel(level) {
+    if (!state.device) return;
+    state.device.batteryLevel = level != null ? Math.max(0, Math.min(100, Number(level))) : null;
+    emit('device');
+  },
+
+  setConnectivity(connected) {
+    if (!state.device) return;
+    state.device.helmetStatus = connected ? 'connected' : 'disconnected';
+    state.device.lastUpdated = new Date().toISOString();
+    emit('device');
+  },
+
+  setGpsStatus(status) {
+    if (!state.device) return;
+    const now = new Date().toISOString();
+    if (status === 'available') {
+      state.device.gpsValid = true;
+      state.device.latitude = state.device.latitude || 28.6692;
+      state.device.longitude = state.device.longitude || 77.4538;
+      state.device.gpsLastFixAt = now;
+    } else if (status === 'stale') {
+      state.device.gpsValid = true;
+      state.device.latitude = state.device.latitude || 28.6692;
+      state.device.longitude = state.device.longitude || 77.4538;
+      state.device.gpsLastFixAt = new Date(Date.now() - 12 * 60 * 1000).toISOString();
+    } else {
+      state.device.gpsValid = false;
+      state.device.latitude = null;
+      state.device.longitude = null;
+      state.device.gpsLastFixAt = null;
+    }
+    emit('device');
+  },
+
+  setSensorStatus({ mpuOk, gsmRegistered }) {
+    if (!state.device) return;
+    if (mpuOk !== undefined) state.device.mpuOk = mpuOk;
+    if (gsmRegistered !== undefined) state.device.gsmRegistered = gsmRegistered;
+    emit('device');
+  },
+
+  triggerSimulatedAccident({
+    severity = 'high',
+    latitude = 28.6692,
+    longitude = 77.4538,
+    gpsValid = true,
+  } = {}) {
+    const now = new Date().toISOString();
+    const alertId = `sim_${Date.now()}`;
+    const alert = {
+      id: alertId,
+      timestamp: now,
+      severity,
+      latitude: gpsValid ? latitude : null,
+      longitude: gpsValid ? longitude : null,
+      gpsValid: !!gpsValid,
+      status: 'new',
+      smsStatus: 'pending',
+    };
+
+    if (state.device) {
+      state.device.accidentStatus = 'alert';
+      state.device.lastUpdated = now;
+      if (gpsValid) {
+        state.device.gpsValid = true;
+        state.device.latitude = latitude;
+        state.device.longitude = longitude;
+        state.device.gpsLastFixAt = now;
+      }
+    }
+
+    state.alerts = [alert, ...(state.alerts || [])];
+    state.notifications = [
+      {
+        id: `notif_${alertId}`,
+        type: 'accident',
+        title: 'Accident detected',
+        body: `[Simulated] ${severity.toUpperCase()} impact detected at ${now.slice(11, 19)}.`,
+        timestamp: now,
+        read: false,
+        alertId,
+      },
+      ...(state.notifications || []),
+    ];
+
+    emit('device');
+    emit('alerts');
+    emit('notifications');
+    return alert;
+  },
+
   async delay(ms = SIMULATED_LATENCY_MS) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   },

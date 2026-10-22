@@ -11,6 +11,16 @@ function normalizePhoneNumber(phone) {
 }
 
 function createSnsClient(overrides = {}) {
+  if (
+    process.env.MOCK_EMERGENCY_DISPATCH === 'true' ||
+    process.env.FUNCTIONS_EMULATOR === 'true' ||
+    overrides.mock === true
+  ) {
+    return {
+      send: async () => ({ MessageId: `mock-sms-${Date.now()}` }),
+    };
+  }
+
   const region = overrides.region || process.env.AWS_REGION || 'ap-south-1';
   const accessKeyId = overrides.accessKeyId || process.env.AWS_ACCESS_KEY_ID;
   const secretAccessKey = overrides.secretAccessKey || process.env.AWS_SECRET_ACCESS_KEY;

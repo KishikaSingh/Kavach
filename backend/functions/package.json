@@ -8,7 +8,9 @@
   "private": true,
   "scripts": {
     "test": "node --test test/expoPush.test.js test/awsSns.test.js",
-    "test:rules": "npx firebase-tools emulators:exec --only database --project demo-kavach --config ../firebase.json \"node --test test/databaseRules.test.js\""
+    "test:rules": "npx firebase-tools emulators:exec --only database --project demo-kavach --config ../firebase.json \"node --test test/databaseRules.test.js\"",
+    "seed": "node scripts/seed.js",
+    "reset": "node scripts/reset.js"
   },
   "dependencies": {
     "@aws-sdk/client-sns": "^3.1155.0",

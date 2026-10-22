@@ -45,6 +45,8 @@ await build({
     'firebase/auth': join(root, 'tests/fakes/firebase-auth.js'),
     'react-native': join(root, 'tests/fakes/react-native.js'),
     '@react-native-async-storage/async-storage': join(root, 'tests/fakes/async-storage.js'),
+    '@expo/vector-icons': join(root, 'tests/fakes/icons.js'),
+    'react-native-safe-area-context': join(root, 'tests/fakes/safe-area.js'),
     react: join(root, 'tests/fakes/react.js'),
   },
   // 'react' is replaced by a tiny stand-in so the data hooks can run without a screen.

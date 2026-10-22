@@ -16,4 +16,5 @@ export function onAuthStateChanged(_auth, next) {
   setTimeout(() => next(user), 0);
   return () => listeners.delete(fn);
 }
+export const connectAuthEmulator = () => {};
 export const __reset = () => {};

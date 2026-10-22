@@ -20,6 +20,48 @@ export function useDemoControls() {
     [isDemo]
   );
 
-  return { isDemo, scenario, scenarios: isDemo ? SCENARIOS : [], setScenario };
+  const setBattery = useCallback((level) => {
+    if (!isDemo) return;
+    demoStore.setBatteryLevel(level);
+  }, [isDemo]);
+
+  const setConnectivity = useCallback((connected) => {
+    if (!isDemo) return;
+    demoStore.setConnectivity(connected);
+  }, [isDemo]);
+
+  const setGps = useCallback((status) => {
+    if (!isDemo) return;
+    demoStore.setGpsStatus(status);
+  }, [isDemo]);
+
+  const setSensors = useCallback((status) => {
+    if (!isDemo) return;
+    demoStore.setSensorStatus(status);
+  }, [isDemo]);
+
+  const triggerAccident = useCallback((options) => {
+    if (!isDemo) return null;
+    return demoStore.triggerSimulatedAccident(options);
+  }, [isDemo]);
+
+  const resetDemo = useCallback(() => {
+    if (!isDemo) return;
+    demoStore.reset();
+    setScenarioState('normal');
+  }, [isDemo]);
+
+  return {
+    isDemo,
+    scenario,
+    scenarios: isDemo ? SCENARIOS : [],
+    setScenario,
+    setBattery,
+    setConnectivity,
+    setGps,
+    setSensors,
+    triggerAccident,
+    resetDemo,
+  };
 }
 export default useDemoControls;

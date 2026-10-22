@@ -5,18 +5,25 @@ import { Ionicons } from '@expo/vector-icons';
 import StatusBadge from './StatusBadge';
 import { colors, getTone, radius, shadows, spacing } from '../constants/theme';
 
-export default function DeviceHealthCard({ icon, label, value, tone = 'grey', note }) {
-  const t = getTone(tone);
+export default function DeviceHealthCard({
+  icon = 'help-circle-outline',
+  label = 'Unknown',
+  value = 'Unavailable',
+  tone = 'grey',
+  note,
+}) {
+  const safeTone = tone || 'grey';
+  const t = getTone(safeTone);
   return (
     <View style={[styles.card, shadows.card]}>
       <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
-        <Ionicons name={icon} size={20} color={t.fg} />
+        <Ionicons name={icon || 'help-circle-outline'} size={20} color={t.fg} />
       </View>
       <View style={styles.body}>
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.label}>{label || 'Unknown'}</Text>
         {note ? <Text style={styles.note}>{note}</Text> : null}
       </View>
-      <StatusBadge label={value} tone={tone} style={styles.badge} />
+      <StatusBadge label={value ?? 'Unavailable'} tone={safeTone} style={styles.badge} />
     </View>
   );
 }

@@ -92,4 +92,17 @@ export async function waitFor(predicate, message = 'condition', timeoutMs = 3000
   }
 }
 
-export default { useState, useEffect, useMemo, useCallback, useRef };
+export function createElement(type, props, ...children) {
+  const normalizedChildren = children.length === 1 ? children[0] : children.length > 1 ? children : undefined;
+  return {
+    type,
+    props: {
+      ...(props || {}),
+      ...(normalizedChildren !== undefined ? { children: normalizedChildren } : {}),
+    },
+  };
+}
+
+export const Fragment = 'Fragment';
+
+export default { useState, useEffect, useMemo, useCallback, useRef, createElement, Fragment };

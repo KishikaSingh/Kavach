@@ -20,6 +20,7 @@ export function useDevice() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 5000);
+    if (id?.unref) id.unref();
     return () => clearInterval(id);
   }, []);
 

@@ -3,13 +3,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getTone, radius, spacing } from '../constants/theme';
 
-export default function StatusBadge({ label, tone = 'grey', style }) {
-  const t = getTone(tone);
+export default function StatusBadge({ label = 'Unavailable', tone = 'grey', style }) {
+  const safeTone = tone || 'grey';
+  const t = getTone(safeTone);
   return (
     <View style={[styles.badge, { backgroundColor: t.bg }, style]}>
       <View style={[styles.dot, { backgroundColor: t.fg }]} />
       <Text style={[styles.text, { color: t.fg }]} numberOfLines={1}>
-        {label}
+        {label ?? 'Unavailable'}
       </Text>
     </View>
   );

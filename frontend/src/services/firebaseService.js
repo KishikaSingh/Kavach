@@ -13,9 +13,23 @@ let cached = null;
 let signInPromise = null;
 
 function firebaseConfig() {
-  const databaseURL = process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL;
-  const apiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-  const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
+  const useEmulator =
+    process.env.EXPO_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+    Boolean(process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST);
+  const emulatorHost =
+    process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST ||
+    (Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1');
+
+  const databaseURL =
+    process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL ||
+    (useEmulator ? `http://${emulatorHost}:9000?ns=demo-kavach` : null);
+  const apiKey =
+    process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
+    (useEmulator ? 'fake-emulator-api-key' : null);
+  const projectId =
+    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    (useEmulator ? 'demo-kavach' : null);
+
   if (!databaseURL || !apiKey || !projectId) {
     throw new ServiceError(
       'LIVE_NOT_CONNECTED',
@@ -24,12 +38,12 @@ function firebaseConfig() {
   }
   return {
     apiKey,
-    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || `${projectId}.firebaseapp.com`,
     databaseURL,
     projectId,
-    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '1234567890',
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:1234567890:web:abcdef',
   };
 }
 
@@ -67,10 +81,32 @@ function sdk() {
     }
   }
 
+  const db = dbMod.getDatabase(app);
+
+  const useEmulator =
+    process.env.EXPO_PUBLIC_USE_FIREBASE_EMULATOR === 'true' ||
+    Boolean(process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST);
+  if (useEmulator) {
+    const emulatorHost =
+      process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST ||
+      (Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1');
+
+    if (typeof dbMod.connectDatabaseEmulator === 'function') {
+      try {
+        dbMod.connectDatabaseEmulator(db, emulatorHost, 9000);
+      } catch (_) {}
+    }
+    if (typeof authMod.connectAuthEmulator === 'function') {
+      try {
+        authMod.connectAuthEmulator(auth, `http://${emulatorHost}:9099`, { disableWarnings: true });
+      } catch (_) {}
+    }
+  }
+
   cached = {
     app,
     auth,
-    db: dbMod.getDatabase(app),
+    db,
     ref: dbMod.ref,
     onValue: dbMod.onValue,
     get: dbMod.get,
