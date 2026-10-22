@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const { onValueCreated } = require('firebase-functions/v2/database');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { isExpoPushToken, sendExpoPushMessages } = require('./expoPush');
+const { dispatchEmergencySms } = require('./awsSns');
 
 admin.initializeApp();
 
@@ -34,7 +35,7 @@ async function publishAccidentAlert(alert, deviceId, alertId) {
   const owners = Object.keys(ownersSnapshot.val() || {});
   if (!owners.length) {
     console.warn(`onAccidentAlertCreated: no owners configured for ${deviceId}`);
-    return { notifications: 0, tickets: 0 };
+    return { notifications: 0, tickets: 0, smsStatus: 'no_owner' };
   }
 
   const now = new Date().toISOString();
@@ -43,6 +44,7 @@ async function publishAccidentAlert(alert, deviceId, alertId) {
   const rootRef = admin.database().ref();
   const writes = {};
   const targets = [];
+  let aggregateSmsStatus = 'no_contacts';
 
   for (const uid of owners) {
     const notificationId = crypto.createHash('sha256').update(`${deviceId}/${alertId}`).digest('hex');
@@ -56,28 +58,48 @@ async function publishAccidentAlert(alert, deviceId, alertId) {
       deviceId,
     };
 
-    const [settingsSnapshot, tokensSnapshot] = await Promise.all([
+    // 1. Fetch user settings, push tokens, profile, and emergency contacts
+    const [settingsSnapshot, tokensSnapshot, profileSnapshot, contactsSnapshot] = await Promise.all([
       admin.database().ref(`users/${uid}/settings`).once('value'),
       admin.database().ref(`users/${uid}/pushTokens`).once('value'),
+      admin.database().ref(`users/${uid}/profile`).once('value'),
+      admin.database().ref(`users/${uid}/contacts`).once('value'),
     ]);
-    if (settingsSnapshot.child('notifications/push').val() === false) continue;
 
-    const tokenRecords = tokensSnapshot.val() || {};
-    for (const [tokenId, record] of Object.entries(tokenRecords)) {
-      if (!record || !isExpoPushToken(record.token)) continue;
-      targets.push({
-        uid,
-        tokenId,
-        message: {
-          to: record.token,
-          title,
-          body,
-          data: { type: 'accident', alertId: String(alertId), deviceId },
-          priority: 'high',
-          channelId: 'default',
-          ...(settingsSnapshot.child('notifications/sound').val() === false ? {} : { sound: 'default' }),
-        },
-      });
+    // 2. Dispatch emergency SMS via AWS SNS to registered contacts
+    const userName = profileSnapshot.child('name').val() || 'Kavach Rider';
+    const contacts = contactsSnapshot.val() || {};
+    const smsResult = await dispatchEmergencySms(contacts, alert, userName);
+
+    aggregateSmsStatus = smsResult.finalStatus;
+    writes[`alerts/${deviceId}/${alertId}/smsStatus`] = smsResult.finalStatus;
+    writes[`alerts/${deviceId}/${alertId}/smsDispatchedAt`] = Date.now();
+    writes[`smsDispatches/${deviceId}/${alertId}`] = {
+      status: smsResult.finalStatus,
+      completedAt: Date.now(),
+      recipients: smsResult.results,
+      message: smsResult.message,
+    };
+
+    // 3. Collect push tokens if enabled
+    if (settingsSnapshot.child('notifications/push').val() !== false) {
+      const tokenRecords = tokensSnapshot.val() || {};
+      for (const [tokenId, record] of Object.entries(tokenRecords)) {
+        if (!record || !isExpoPushToken(record.token)) continue;
+        targets.push({
+          uid,
+          tokenId,
+          message: {
+            to: record.token,
+            title,
+            body,
+            data: { type: 'accident', alertId: String(alertId), deviceId },
+            priority: 'high',
+            channelId: 'default',
+            ...(settingsSnapshot.child('notifications/sound').val() === false ? {} : { sound: 'default' }),
+          },
+        });
+      }
     }
   }
 
@@ -85,7 +107,7 @@ async function publishAccidentAlert(alert, deviceId, alertId) {
 
   if (!targets.length) {
     console.info(`onAccidentAlertCreated ${alertId}: no opted-in Expo push tokens`);
-    return { notifications: owners.length, tickets: 0 };
+    return { notifications: owners.length, tickets: 0, smsStatus: aggregateSmsStatus };
   }
 
   const tickets = await sendExpoPushMessages(targets.map((target) => target.message));
@@ -107,8 +129,8 @@ async function publishAccidentAlert(alert, deviceId, alertId) {
     }
   }
   if (Object.keys(receiptWrites).length) await rootRef.update(receiptWrites);
-  console.info(`onAccidentAlertCreated ${alertId}: ${accepted}/${tickets.length} Expo push tickets accepted`);
-  return { notifications: owners.length, tickets: accepted };
+  console.info(`onAccidentAlertCreated ${alertId}: ${accepted}/${tickets.length} Expo push tickets accepted, SMS status: ${aggregateSmsStatus}`);
+  return { notifications: owners.length, tickets: accepted, smsStatus: aggregateSmsStatus };
 }
 
 exports.onAccidentAlertCreated = onValueCreated(
@@ -153,8 +175,7 @@ exports.checkExpoPushReceipts = onSchedule(
             uid: userSnapshot.key,
             ticketId: receiptSnapshot.key,
             tokenId: record.tokenId,
-          }
-);
+          });
         }
       });
     });
@@ -190,4 +211,5 @@ exports.checkExpoPushReceipts = onSchedule(
     }
     console.info(`checkExpoPushReceipts: checked ${checked} receipts`);
     return null;
-  });
+  }
+);

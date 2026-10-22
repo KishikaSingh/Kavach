@@ -7,10 +7,11 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "test": "node --test test/expoPush.test.js",
+    "test": "node --test test/expoPush.test.js test/awsSns.test.js",
     "test:rules": "npx firebase-tools emulators:exec --only database --project demo-kavach --config ../firebase.json \"node --test test/databaseRules.test.js\""
   },
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.1155.0",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.3.2"
   },

@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../constants/theme';
 import { initPushNotifications, stopPushNotifications } from '../services/notificationService.js';
+import { startEmergencyNotificationWatcher, stopEmergencyNotificationWatcher } from '../services/emergencyNotificationService.js';
 
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -92,7 +93,11 @@ const headerOptions = {
 
 export default function AppNavigator() {
   useEffect(() => {
-    return stopPushNotifications;
+    startEmergencyNotificationWatcher();
+    return () => {
+      stopPushNotifications();
+      stopEmergencyNotificationWatcher();
+    };
   }, []);
 
   const initializePushAfterOnboarding = () => {

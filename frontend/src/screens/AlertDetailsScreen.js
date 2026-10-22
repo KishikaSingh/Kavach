@@ -3,6 +3,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { useAlerts } from '../hooks/useAlerts.js';
 import { LocationPreview } from '../components/LocationPreview.js';
 import { EmptyState, ErrorState, LoadingState, StatusBanner } from '../components/ScreenStates.js';
+import { EmergencyDispatchBanner } from '../components/EmergencyDispatchBanner.js';
 import { colors, space, type } from '../components/person2Theme.js';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
 
@@ -93,6 +94,12 @@ export function AlertDetailsScreen({ route, navigation }) {
       <StatusBanner tone={alert.smsStatus === 'failed' ? 'danger' : 'info'}>
         {SMS_COPY[alert.smsStatus] || SMS_COPY.unknown}
       </StatusBanner>
+
+      <EmergencyDispatchBanner
+        alert={alert}
+        onAddContacts={() => navigation?.navigate?.('Contacts')}
+      />
+
       {actionError ? <StatusBanner tone="danger">{actionError}</StatusBanner> : null}
 
       <LocationPreview
@@ -137,4 +144,5 @@ const styles = StyleSheet.create({
   disabled: { backgroundColor: colors.cardAlt },
   resolveText: { color: colors.text, fontWeight: '700' },
 });
+
 export default AlertDetailsScreen;
