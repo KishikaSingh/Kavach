@@ -102,13 +102,13 @@ export default function ProfileScreen({ navigation }) {
           icon="hardware-chip-outline"
           label="Registered Device"
           value={device?.deviceId || 'KAVACH-HLM-01'}
-          onPress={() => navigation.navigate('DeviceSettings')}
+          onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
         />
         <ProfileRow
           icon="settings-outline"
           label="Hardware Diagnostics"
           value="MPU6050, GSM, GPS health"
-          onPress={() => navigation.navigate('DeviceSettings')}
+          onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
         />
         <ProfileRow
           icon="add-circle-outline"

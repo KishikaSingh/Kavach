@@ -194,7 +194,7 @@ export default function DashboardScreen({ navigation }) {
 
           <Pressable
             style={styles.heroSettingsBtn}
-            onPress={() => navigation.navigate('DeviceSettings')}
+            onPress={() => navigation.navigate('Settings')}
             accessibilityRole="button"
             accessibilityLabel="Device Settings"
           >
@@ -244,7 +244,7 @@ export default function DashboardScreen({ navigation }) {
 
         <Pressable
           style={styles.quickActionItem}
-          onPress={() => navigation.navigate('DeviceSettings')}
+          onPress={() => navigation.navigate('Settings')}
           accessibilityRole="button"
           accessibilityLabel="Open Device Settings"
         >
