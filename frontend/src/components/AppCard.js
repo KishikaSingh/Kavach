@@ -25,10 +25,10 @@ export default function AppCard({
       borderWidth: 1,
     },
     hero: {
-      backgroundColor: isDark ? colors.cardElevated : colors.midnightNavy,
-      borderColor: isDark ? colors.border : colors.deepNavy,
+      backgroundColor: isDark ? colors.cardElevated : colors.card,
+      borderColor: isDark ? colors.border : colors.border,
       borderWidth: 1,
-      borderRadius: 22,
+      borderRadius: 20,
     },
     surface: {
       backgroundColor: colors.mutedSurface,

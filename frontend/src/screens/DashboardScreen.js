@@ -95,23 +95,23 @@ export default function DashboardScreen({ navigation }) {
       {/* Top Header Bar */}
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <View style={[styles.brandEmblem, { backgroundColor: isDark ? colors.cardElevated : colors.midnightNavy, borderColor: colors.border }]}>
+          <View style={[styles.brandEmblem, { backgroundColor: colors.primarySoft, borderColor: isDark ? colors.border : '#B2EBF2' }]}>
             <Ionicons name="shield-checkmark" size={20} color={colors.safetyTeal} />
           </View>
           <View style={styles.brandTitles}>
-            <Text style={[styles.greetingText, { color: colors.safetyTeal }]}>STAY SAFE, RIDE SMART</Text>
-            <Text style={[styles.appName, { color: colors.text }]}>Kavach Helmet</Text>
+            <Text style={[styles.appName, { color: colors.text }]}>Kavach</Text>
+            <Text style={[styles.greetingText, { color: colors.textSecondary }]}>Smart Helmet Safety</Text>
           </View>
         </View>
 
         <View style={styles.headerActions}>
           <Pressable
-            style={styles.iconBtn}
+            style={[styles.iconBtn, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}
             onPress={() => navigation.navigate('Notifications')}
             accessibilityRole="button"
             accessibilityLabel={`Notifications, ${unreadCount} unread`}
           >
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
+            <Ionicons name="notifications-outline" size={20} color={colors.text} />
             {unreadCount > 0 ? (
               <View style={[styles.bell, { backgroundColor: colors.emergency }]}>
                 <Text style={styles.bellText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -120,12 +120,12 @@ export default function DashboardScreen({ navigation }) {
           </Pressable>
 
           <Pressable
-            style={[styles.iconBtn, styles.profileBtn]}
+            style={[styles.iconBtn, styles.profileBtn, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}
             onPress={() => navigation.navigate('Profile')}
             accessibilityRole="button"
             accessibilityLabel="Profile and Appearance settings"
           >
-            <Ionicons name="person-circle-outline" size={28} color={colors.text} />
+            <Ionicons name="person-outline" size={20} color={colors.text} />
           </Pressable>
         </View>
       </View>
@@ -161,12 +161,12 @@ export default function DashboardScreen({ navigation }) {
       <AppCard variant="hero" style={styles.heroCard}>
         <View style={styles.heroTopRow}>
           <View style={styles.heroIdentity}>
-            <View style={styles.heroHelmetCircle}>
+            <View style={[styles.heroHelmetCircle, { backgroundColor: colors.primarySoft, borderColor: isDark ? colors.border : '#B2EBF2' }]}>
               <Ionicons name="shield-checkmark" size={22} color={colors.safetyTeal} />
             </View>
             <View>
-              <Text style={styles.heroDeviceName}>{device?.id || 'KAVACH-HLM-01'}</Text>
-              <Text style={styles.heroSubId}>Smart Safety System</Text>
+              <Text style={[styles.heroDeviceName, { color: colors.text }]}>{device?.id || 'KAVACH-HLM-01'}</Text>
+              <Text style={[styles.heroSubId, { color: colors.safetyTeal }]}>Smart Safety System</Text>
             </View>
           </View>
           <ConnectionIndicator
@@ -176,30 +176,30 @@ export default function DashboardScreen({ navigation }) {
           />
         </View>
 
-        <View style={styles.heroDivider} />
+        <View style={[styles.heroDivider, { backgroundColor: colors.border }]} />
 
         <View style={styles.heroMiddleRow}>
           <View style={styles.heroHealthBox}>
             <View style={styles.heroHealthHeader}>
               <Ionicons
                 name={health.tone === 'red' ? 'alert-circle' : health.tone === 'orange' ? 'warning' : 'checkmark-circle'}
-                size={20}
-                color={health.tone === 'red' ? colors.emergency : health.tone === 'orange' ? colors.warning : colors.cyanAccent}
+                size={18}
+                color={health.tone === 'red' ? colors.emergency : health.tone === 'orange' ? colors.warning : colors.safetyTeal}
                 style={styles.heroHealthIcon}
               />
-              <Text style={styles.heroHealthTitle}>{health.title}</Text>
+              <Text style={[styles.heroHealthTitle, { color: colors.text }]}>{health.title}</Text>
             </View>
-            <Text style={styles.heroHealthSub}>{health.sub}</Text>
+            <Text style={[styles.heroHealthSub, { color: colors.textSecondary }]}>{health.sub}</Text>
           </View>
 
           <Pressable
-            style={styles.heroSettingsBtn}
+            style={[styles.heroSettingsBtn, { backgroundColor: colors.primarySoft, borderColor: isDark ? colors.border : '#B2EBF2' }]}
             onPress={() => navigation.navigate('Settings')}
             accessibilityRole="button"
             accessibilityLabel="Device Settings"
           >
-            <Ionicons name="settings-outline" size={16} color={colors.cyanAccent} />
-            <Text style={styles.heroSettingsText}>Manage</Text>
+            <Ionicons name="settings-outline" size={15} color={colors.safetyTeal} />
+            <Text style={[styles.heroSettingsText, { color: colors.safetyTeal }]}>Manage</Text>
           </Pressable>
         </View>
       </AppCard>
@@ -212,8 +212,8 @@ export default function DashboardScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Open Location"
         >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : '#EAF4FA', borderColor: colors.border }]}>
-            <Ionicons name="navigate-outline" size={22} color={isDark ? colors.cyanAccent : colors.deepNavy} />
+          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
+            <Ionicons name="navigate-outline" size={22} color={colors.safetyTeal} />
           </View>
           <Text style={[styles.quickActionLabel, { color: colors.text }]}>Location</Text>
         </Pressable>
@@ -224,7 +224,7 @@ export default function DashboardScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Open Emergency Contacts"
         >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : '#E6F8F6', borderColor: colors.border }]}>
+          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
             <Ionicons name="people-outline" size={22} color={colors.safetyTeal} />
           </View>
           <Text style={[styles.quickActionLabel, { color: colors.text }]}>Contacts</Text>
@@ -236,7 +236,7 @@ export default function DashboardScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Open Alerts"
         >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : '#FEE2E2', borderColor: colors.border }]}>
+          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
             <Ionicons name="notifications-outline" size={22} color={colors.emergency} />
           </View>
           <Text style={[styles.quickActionLabel, { color: colors.text }]}>Alerts</Text>
@@ -248,8 +248,8 @@ export default function DashboardScreen({ navigation }) {
           accessibilityRole="button"
           accessibilityLabel="Open Device Settings"
         >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : '#F0F4F8', borderColor: colors.border }]}>
-            <Ionicons name="hardware-chip-outline" size={22} color={isDark ? colors.textSecondary : colors.deepNavy} />
+          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
+            <Ionicons name="hardware-chip-outline" size={22} color={colors.safetyTeal} />
           </View>
           <Text style={[styles.quickActionLabel, { color: colors.text }]}>Device</Text>
         </Pressable>
@@ -313,27 +313,33 @@ export default function DashboardScreen({ navigation }) {
               style={[
                 styles.mapBox,
                 {
-                  backgroundColor: isDark ? colors.cardElevated : '#EAF4FA',
+                  backgroundColor: isDark ? colors.cardElevated : '#EEF5FB',
                   borderColor: colors.border,
                 },
               ]}
               accessibilityLabel="Map preview of the last helmet position"
             >
-              {[25, 50, 75].map((p) => (
-                <View key={`h${p}`} style={[styles.gridLineH, { top: `${p}%`, backgroundColor: isDark ? colors.border : '#D3E4F0' }]} />
-              ))}
-              {[25, 50, 75].map((p) => (
-                <View key={`v${p}`} style={[styles.gridLineV, { left: `${p}%`, backgroundColor: isDark ? colors.border : '#D3E4F0' }]} />
-              ))}
-              <View style={styles.radarPing} />
-              <Ionicons name="location-sharp" size={36} color={colors.emergency} />
+              <View style={[styles.mapPinPulse, { backgroundColor: 'rgba(0, 184, 169, 0.12)' }]}>
+                <View style={[styles.mapPinPulseInner, { backgroundColor: 'rgba(0, 184, 169, 0.25)' }]}>
+                  <View style={[styles.mapPinCenter, { backgroundColor: colors.emergency }]}>
+                    <Ionicons name="location" size={22} color="#FFFFFF" />
+                  </View>
+                </View>
+              </View>
+
+              <View style={[styles.mapCoordsBadge, { backgroundColor: isDark ? 'rgba(11, 18, 32, 0.88)' : 'rgba(255, 255, 255, 0.94)', borderColor: colors.border }]}>
+                <Ionicons name="navigate-outline" size={13} color={colors.safetyTeal} style={{ marginRight: 4 }} />
+                <Text style={[styles.mapCoordsText, { color: colors.text }]}>
+                  {formatCoord(device.latitude)}, {formatCoord(device.longitude)}
+                </Text>
+              </View>
             </View>
             <View style={styles.locationFooter}>
               <View style={styles.flex}>
                 <Text style={[styles.coordsText, { color: colors.text }]}>
-                  {formatCoord(device.latitude)}, {formatCoord(device.longitude)}
+                  Live Satellite Position
                 </Text>
-                <Text style={[styles.metaText, { color: colors.textSecondary }]}>Last GPS fix: {timeAgo(device.gpsLastFixAt)}</Text>
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>Last updated: {timeAgo(device.gpsLastFixAt)}</Text>
               </View>
               <AppButton
                 title="Open Map"
@@ -484,25 +490,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   greetingText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 1,
   },
   appName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    marginTop: 1,
+    letterSpacing: 0.5,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconBtn: {
-    width: MIN_TOUCH,
-    height: MIN_TOUCH,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.pill,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   profileBtn: {
     marginLeft: spacing.xs,
@@ -581,13 +588,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 184, 169, 0.4)',
   },
   heroDeviceName: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
   heroSubId: {
-    color: '#36CFC9',
     fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
@@ -596,11 +601,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   heroDivider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     marginVertical: spacing.md,
   },
   heroMiddleRow: {
@@ -619,27 +622,22 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   heroHealthTitle: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
   heroHealthSub: {
-    color: '#CBD5E1',
     fontSize: 12,
     marginTop: 2,
   },
   heroSettingsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(54, 207, 201, 0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(54, 207, 201, 0.45)',
-    borderRadius: radius.md,
+    borderRadius: radius.pill,
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
   },
   heroSettingsText: {
-    color: '#36CFC9',
     fontSize: 12,
     fontWeight: '700',
     marginLeft: 4,
@@ -685,26 +683,43 @@ const styles = StyleSheet.create({
     position: 'relative',
     borderWidth: 1,
   },
-  gridLineH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
+  mapPinPulse: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  gridLineV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
+  mapPinPulseInner: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  radarPing: {
+  mapPinCenter: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+  mapCoordsBadge: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(0, 184, 169, 0.15)',
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: 'rgba(0, 184, 169, 0.4)',
+    ...shadows.sm,
+  },
+  mapCoordsText: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   locationFooter: {
     flexDirection: 'row',

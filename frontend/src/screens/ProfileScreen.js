@@ -263,12 +263,12 @@ const createStyles = (colors, isDark) => StyleSheet.create({
     flex: 1,
   },
   name: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 18,
     fontWeight: '800',
   },
   sub: {
-    color: '#94A3B8',
+    color: colors.textSecondary,
     fontSize: 13,
     marginTop: 2,
   },

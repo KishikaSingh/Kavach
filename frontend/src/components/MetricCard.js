@@ -97,8 +97,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statusTag: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: -0.2,
     maxWidth: '65%',
     textAlign: 'right',
   },
