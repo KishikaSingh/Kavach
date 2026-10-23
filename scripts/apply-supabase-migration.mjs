@@ -7,6 +7,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
+// Load environment variables from root .env
+const rootEnvPath = path.join(rootDir, '.env');
+if (fs.existsSync(rootEnvPath)) {
+  const content = fs.readFileSync(rootEnvPath, 'utf8');
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const match = trimmed.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      let value = match[2].trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
 const connectionString =
   process.env.SUPABASE_DB_URL ||
   'postgresql://postgres:%3F8T%24%2B5uSqMuwskH@db.dcgybpninduaacnarytf.supabase.co:5432/postgres';
