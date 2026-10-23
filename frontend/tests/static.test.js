@@ -102,7 +102,10 @@ test('app and firmware default to the same DEVICE_ID', () => {
   const firmware = read('../firmware/KavachHelmet/config.example.h').match(/#define\s+DEVICE_ID\s+"([^"]+)"/)[1];
   const app = read('src/services/supabaseService.js').match(/EXPO_PUBLIC_DEVICE_ID \|\| '([^']+)'/)[1];
   assert.equal(app, firmware);
-  assert.match(read('.env.example'), new RegExp(`EXPO_PUBLIC_DEVICE_ID=${firmware}`));
+  const envExample = fs.existsSync(path.join(root, '.env.example'))
+    ? read('.env.example')
+    : read('../.env.example');
+  assert.match(envExample, new RegExp(`EXPO_PUBLIC_DEVICE_ID=${firmware}`));
 });
 
 test('secrets stay out of git', () => {
