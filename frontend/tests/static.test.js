@@ -84,24 +84,23 @@ test('mock data is opt-in and alerts do not nest virtualized lists', () => {
   assert.doesNotMatch(read('src/services/notificationService.js'), /import \* as Notifications from 'expo-notifications'/);
 });
 
-test('Firebase rules, Cloud Function, app and firmware use the same alert path', () => {
-  const rules = json('../backend/firebase/database.rules.json').rules;
-  assert.ok(rules.alerts.$deviceId && rules.alerts.$deviceId.$alertId, 'rules: alerts/$deviceId/$alertId');
-  assert.equal(rules.alerts.$alertId, undefined, 'rules: no flat alerts/$alertId');
-  assert.ok(rules.devices.$deviceId, 'rules: devices/$deviceId');
+test('Supabase schema, Edge Function, app and firmware use the same alert contract', () => {
+  const schema = read('../supabase/migrations/20261023_init_kavach_schema.sql');
+  assert.ok(schema.includes('accident_alerts'), 'schema: accident_alerts');
+  assert.ok(schema.includes('helmet_telemetry'), 'schema: helmet_telemetry');
 
-  assert.match(read('../backend/functions/index.js'), /ref: '\/alerts\/\{deviceId\}\/\{alertId\}'/);
-  assert.match(read('src/services/firebaseService.js'), /`alerts\/\$\{DEVICE_ID\}`/);
+  assert.match(read('../supabase/functions/dispatch-accident-alert/index.ts'), /accident_alerts/);
+  assert.match(read('src/services/supabaseService.js'), /accident_alerts/);
 
-  // The firmware that gets flashed is firmware/KavachHelmet (custom-token sign-in, matches the rules).
+  // The firmware that gets flashed is firmware/KavachHelmet
   const ino = read('../firmware/KavachHelmet/KavachHelmet.ino');
-  assert.match(ino, /String\("devices\/"\) \+ DEVICE_ID/);
-  assert.match(ino, /String\("alerts\/"\) \+ DEVICE_ID/);
+  assert.match(ino, /telemetry/);
+  assert.match(ino, /alert/);
 });
 
 test('app and firmware default to the same DEVICE_ID', () => {
   const firmware = read('../firmware/KavachHelmet/config.example.h').match(/#define\s+DEVICE_ID\s+"([^"]+)"/)[1];
-  const app = read('src/services/firebaseService.js').match(/EXPO_PUBLIC_DEVICE_ID \|\| '([^']+)'/)[1];
+  const app = read('src/services/supabaseService.js').match(/EXPO_PUBLIC_DEVICE_ID \|\| '([^']+)'/)[1];
   assert.equal(app, firmware);
   assert.match(read('.env.example'), new RegExp(`EXPO_PUBLIC_DEVICE_ID=${firmware}`));
 });

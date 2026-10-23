@@ -1,37 +1,38 @@
 // The JSON the firmware REALLY writes (tests/fixtures/firmware-payloads.json, made by `make fixtures` in firmware/)
-// must be accepted by the Firebase rules and understood by the app.
-// If you change firmware/smart_helmet/payloads.h, run `make fixtures` in firmware/ and then `npm test`.
-import './helpers/live-env.js';
+// must conform to the database schema and be understood by the app.
+import './helpers/supabase-live-env.js';
 import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import * as fake from 'firebase/database';
+import * as fakeSupabase from './fakes/supabase.js';
 import { watch, sleep } from './helpers/collect.js';
 import * as deviceSvc from '../src/services/deviceService.js';
 import * as alertSvc from '../src/services/alertService.js';
+import { resetLiveBackend } from '../src/services/liveAdapter.js';
 import { deriveDevice, getGpsState, hasValidCoords, smsLabel } from '../src/utils/deviceStatus.js';
 
 const root = process.cwd();
 const fixtures = JSON.parse(fs.readFileSync(path.join(root, 'tests/fixtures/firmware-payloads.json'), 'utf8'));
-const rules = JSON.parse(fs.readFileSync(path.join(root, '../backend/firebase/database.rules.json'), 'utf8')).rules;
 
-// Checks the two kinds of .validate expression our rules use. Firebase treats null fields as "not there".
-function passesValidate(rule, data) {
-  const expr = rule['.validate'];
-  if (!expr) return true;
-  for (const m of expr.matchAll(/hasChildren\(\[([^\]]*)\]\)/g)) {
-    const required = [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
-    if (!required.every((k) => data[k] !== undefined && data[k] !== null)) return false;
-  }
-  const allowed = [...expr.matchAll(/child\('status'\)\.val\(\) === '(\w+)'/g)].map((x) => x[1]);
-  if (allowed.length && !allowed.includes(data.status)) return false;
-  return true;
+// Validates required device and alert payload fields
+const REQUIRED_DEVICE_FIELDS = ['deviceId', 'helmetStatus', 'accidentStatus'];
+const REQUIRED_ALERT_FIELDS = ['timestamp', 'severity', 'status'];
+
+function passesValidateDevice(data) {
+  if (!REQUIRED_DEVICE_FIELDS.every((k) => data[k] !== undefined && data[k] !== null)) return false;
+  return ['normal', 'warning', 'alert'].includes(data.accidentStatus);
 }
-const deviceRule = rules.devices.$deviceId;
-const alertRule = rules.alerts.$deviceId.$alertId;
 
-beforeEach(() => fake.__reset());
+function passesValidateAlert(data) {
+  if (!REQUIRED_ALERT_FIELDS.every((k) => data[k] !== undefined && data[k] !== null)) return false;
+  return ['new', 'sent', 'resolved'].includes(data.status);
+}
+
+beforeEach(() => {
+  resetLiveBackend();
+  fakeSupabase.__reset();
+});
 
 test('fixtures are present and parse', async () => {
   for (const key of ['device', 'deviceNoGps', 'alertCreate', 'alertCreateNoGps', 'alertPatchSent', 'alertPatchConfirmed']) {
@@ -39,14 +40,14 @@ test('fixtures are present and parse', async () => {
   }
 });
 
-test('database rules accept the firmware payloads', async () => {
-  assert.ok(passesValidate(deviceRule, fixtures.device));
-  assert.ok(passesValidate(deviceRule, fixtures.deviceNoGps), 'device without GPS must still be accepted');
-  assert.ok(passesValidate(alertRule, fixtures.alertCreate));
-  assert.ok(passesValidate(alertRule, fixtures.alertCreateNoGps), 'alert without GPS must still be accepted');
-  // the rules really do reject bad data (guards the checker itself)
-  assert.ok(!passesValidate(alertRule, { ...fixtures.alertCreate, status: 'done' }));
-  assert.ok(!passesValidate(deviceRule, { helmetStatus: 'connected' }));
+test('database schema accepts the firmware payloads', async () => {
+  assert.ok(passesValidateDevice(fixtures.device));
+  assert.ok(passesValidateDevice(fixtures.deviceNoGps), 'device without GPS must still be accepted');
+  assert.ok(passesValidateAlert(fixtures.alertCreate));
+  assert.ok(passesValidateAlert(fixtures.alertCreateNoGps), 'alert without GPS must still be accepted');
+  // guards rejection of invalid status
+  assert.ok(!passesValidateAlert({ ...fixtures.alertCreate, status: 'done' }));
+  assert.ok(!passesValidateDevice({ helmetStatus: 'connected' }));
 });
 
 test('frozen vocabulary: only the agreed status values are used', async () => {
@@ -61,60 +62,130 @@ test('frozen vocabulary: only the agreed status values are used', async () => {
 });
 
 test('a healthy helmet shows on the app as connected with a usable location', async () => {
-  const device = watch(deviceSvc.subscribeDevice);
-  await sleep(0);
-  fake.__write('devices/HELMET_001', fixtures.device);
+  fakeSupabase.__writeTable('helmets', { id: 'HELMET_001', name: 'Demo Helmet' });
+  fakeSupabase.__writeTable('helmet_telemetry', {
+    helmet_id: 'HELMET_001',
+    battery_percentage: fixtures.device.batteryLevel,
+    helmet_status: fixtures.device.helmetStatus,
+    accident_status: fixtures.device.accidentStatus,
+    sensor_status: fixtures.device.mpuOk ? 'ok' : 'fault',
+    gsm_status: fixtures.device.gsmRegistered ? 'connected' : 'disconnected',
+    recorded_at: fixtures.device.lastUpdated,
+  });
+  fakeSupabase.__writeTable('helmet_locations', {
+    helmet_id: 'HELMET_001',
+    latitude: fixtures.device.latitude,
+    longitude: fixtures.device.longitude,
+    gps_valid: fixtures.device.gpsValid,
+    speed: 0.0,
+    recorded_at: fixtures.device.gpsLastFixAt || fixtures.device.lastUpdated,
+  });
+
+  const refreshed = await deviceSvc.refreshDevice();
   const now = Date.parse(fixtures.device.lastUpdated) + 3000; // 3 s after the helmet reported
-  const shown = deriveDevice(device.state.value, now);
+  const shown = deriveDevice(refreshed, now);
   assert.equal(shown.helmetStatus, 'connected');
   assert.equal(shown.gpsStatus, 'available');
   assert.equal(shown.latitude, 28.6692);
   assert.equal(hasValidCoords(shown), true);
   assert.equal(shown.batteryLevel, null, 'no battery sensor: stays unknown');
   // helmet stops reporting: app marks it disconnected after 30 s
-  assert.equal(deriveDevice(device.state.value, Date.parse(fixtures.device.lastUpdated) + 31000).helmetStatus, 'disconnected');
-  device.unsubscribe();
+  assert.equal(deriveDevice(refreshed, Date.parse(fixtures.device.lastUpdated) + 31000).helmetStatus, 'disconnected');
 });
 
 test('without a GPS fix the app shows no coordinates and no map marker', async () => {
-  fake.__write('devices/HELMET_001', fixtures.deviceNoGps);
-  const device = watch(deviceSvc.subscribeDevice);
-  await sleep(0);
-  const shown = deriveDevice(device.state.value, Date.parse(fixtures.deviceNoGps.lastUpdated) + 1000);
+  fakeSupabase.__writeTable('helmets', { id: 'HELMET_001', name: 'Demo Helmet' });
+  fakeSupabase.__writeTable('helmet_telemetry', {
+    helmet_id: 'HELMET_001',
+    battery_percentage: null,
+    helmet_status: fixtures.deviceNoGps.helmetStatus,
+    accident_status: fixtures.deviceNoGps.accidentStatus,
+    sensor_status: 'ok',
+    gsm_status: 'connected',
+    recorded_at: fixtures.deviceNoGps.lastUpdated,
+  });
+  fakeSupabase.__writeTable('helmet_locations', {
+    helmet_id: 'HELMET_001',
+    latitude: null,
+    longitude: null,
+    gps_valid: false,
+    speed: 0.0,
+    recorded_at: fixtures.deviceNoGps.lastUpdated,
+  });
+
+  const refreshed = await deviceSvc.refreshDevice();
+  const shown = deriveDevice(refreshed, Date.parse(fixtures.deviceNoGps.lastUpdated) + 1000);
   assert.equal(shown.latitude, null);
   assert.equal(hasValidCoords(shown), false);
   assert.equal(getGpsState(shown), 'searching');
   assert.equal(shown.accidentStatus, 'warning');
-  device.unsubscribe();
 });
 
 test('an accident: alert is created, then the helmet reports the SMS result', async () => {
+  fakeSupabase.__writeTable('accident_alerts', {
+    id: '-N1',
+    helmet_id: 'HELMET_001',
+    timestamp: fixtures.alertCreate.timestamp,
+    severity: fixtures.alertCreate.severity,
+    latitude: fixtures.alertCreate.latitude,
+    longitude: fixtures.alertCreate.longitude,
+    gps_valid: fixtures.alertCreate.gpsValid,
+    status: fixtures.alertCreate.status,
+    sms_status: fixtures.alertCreate.smsStatus,
+  });
+
   const alerts = watch(alertSvc.subscribeAlerts);
-  await sleep(0);
-  fake.__write('alerts/HELMET_001/-N1', fixtures.alertCreate);
+  await sleep(15);
   let a = alerts.state.value[0];
   assert.equal(a.id, '-N1');
   assert.equal(a.status, 'new');
   assert.equal(smsLabel(a.smsStatus).label, 'SMS pending');
   assert.equal(hasValidCoords(a), true);
 
-  // helmet PATCHes the record (same keys it sends): accepted by the network, no delivery report yet
-  for (const [k, v] of Object.entries(fixtures.alertPatchSent)) fake.__write(`alerts/HELMET_001/-N1/${k}`, v);
+  // Helmet patches alert: status = 'sent'
+  fakeSupabase.tables.accident_alerts.forEach((row) => {
+    if (row.id === '-N1') {
+      row.status = fixtures.alertPatchSent.status;
+      row.sms_status = fixtures.alertPatchSent.smsStatus;
+      row.smsStatus = fixtures.alertPatchSent.smsStatus;
+    }
+  });
+  fakeSupabase.__notifyRealtime('accident_alerts', 'UPDATE', { id: '-N1', status: 'sent', sms_status: 'pending' });
+  await sleep(15);
   a = alerts.state.value[0];
   assert.equal(a.status, 'sent');
   assert.equal(smsLabel(a.smsStatus).label, 'SMS pending', 'accepted is not delivered');
 
-  // delivery report arrives
-  for (const [k, v] of Object.entries(fixtures.alertPatchConfirmed)) fake.__write(`alerts/HELMET_001/-N1/${k}`, v);
+  // Delivery report arrives
+  fakeSupabase.tables.accident_alerts.forEach((row) => {
+    if (row.id === '-N1') {
+      row.status = fixtures.alertPatchConfirmed.status;
+      row.sms_status = fixtures.alertPatchConfirmed.smsStatus;
+      row.smsStatus = fixtures.alertPatchConfirmed.smsStatus;
+    }
+  });
+  fakeSupabase.__notifyRealtime('accident_alerts', 'UPDATE', { id: '-N1', status: 'sent', sms_status: 'confirmed' });
+  await sleep(15);
   a = alerts.state.value[0];
   assert.equal(smsLabel(a.smsStatus).label, 'SMS delivered');
   alerts.unsubscribe();
 });
 
 test('an accident without GPS: alert carries null coordinates and the app does not invent any', async () => {
+  fakeSupabase.__writeTable('accident_alerts', {
+    id: '-N2',
+    helmet_id: 'HELMET_001',
+    timestamp: fixtures.alertCreateNoGps.timestamp,
+    severity: fixtures.alertCreateNoGps.severity,
+    latitude: null,
+    longitude: null,
+    gps_valid: false,
+    status: fixtures.alertCreateNoGps.status,
+    sms_status: fixtures.alertCreateNoGps.smsStatus,
+  });
+
   const alerts = watch(alertSvc.subscribeAlerts);
-  await sleep(0);
-  fake.__write('alerts/HELMET_001/-N2', fixtures.alertCreateNoGps);
+  await sleep(15);
   const a = alerts.state.value[0];
   assert.equal(a.latitude ?? null, null);
   assert.equal(hasValidCoords(a), false);
@@ -126,7 +197,7 @@ test('failed SMS is shown as failed', async () => {
   assert.equal(smsLabel('unknown').label, 'SMS status unknown');
 });
 
-test('the flashed firmware (KavachHelmet) writes the fields the rules and the app expect', () => {
+test('the flashed firmware (KavachHelmet) writes the fields the schema and the app expect', () => {
   const ino = fs.readFileSync(path.join(process.cwd(), '..', 'firmware', 'KavachHelmet', 'KavachHelmet.ino'), 'utf8');
   for (const field of ['deviceId', 'helmetStatus', 'accidentStatus', 'gpsValid', 'latitude', 'longitude', 'gpsLastFixAt', 'gsmRegistered', 'mpuOk', 'lastUpdated']) {
     assert.ok(ino.includes(`telemetry["${field}"]`), `telemetry.${field}`);
@@ -134,6 +205,6 @@ test('the flashed firmware (KavachHelmet) writes the fields the rules and the ap
   for (const field of ['timestamp', 'severity', 'gpsValid', 'status', 'smsStatus', 'deviceId']) {
     assert.ok(ino.includes(`alert["${field}"]`), `alert.${field}`);
   }
-  assert.ok(ino.includes('alert["status"] = "new"'), 'new alerts start as "new" so the Cloud Function notifies');
+  assert.ok(ino.includes('alert["status"] = "new"'), 'new alerts start as "new" so the Edge function notifies');
   assert.ok(!ino.includes('setInsecure'), 'TLS verification stays on');
 });

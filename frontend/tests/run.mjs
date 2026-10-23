@@ -40,17 +40,17 @@ await build({
   logLevel: 'error',
   loader: { '.js': 'jsx' },
   alias: {
-    'firebase/app': join(root, 'tests/fakes/firebase-app.js'),
-    'firebase/database': join(root, 'tests/fakes/firebase-database.js'),
-    'firebase/auth': join(root, 'tests/fakes/firebase-auth.js'),
+    '@supabase/supabase-js': join(root, 'tests/fakes/supabase.js'),
     'react-native': join(root, 'tests/fakes/react-native.js'),
     '@react-native-async-storage/async-storage': join(root, 'tests/fakes/async-storage.js'),
     '@expo/vector-icons': join(root, 'tests/fakes/icons.js'),
     'react-native-safe-area-context': join(root, 'tests/fakes/safe-area.js'),
     react: join(root, 'tests/fakes/react.js'),
+    'expo-notifications': join(root, 'tests/fakes/expo-notifications.js'),
+    'expo-constants': join(root, 'tests/fakes/expo-constants.js'),
   },
   // 'react' is replaced by a tiny stand-in so the data hooks can run without a screen.
-  external: ['expo-notifications', 'expo-constants', 'expo-device'],
+  external: ['expo-device'],
 });
 
 const built = entries.map((f) => join(out, relative(join(root, 'tests'), f)));

@@ -4,11 +4,10 @@ import assert from 'node:assert/strict';
 import { watch } from './helpers/collect.js';
 
 process.env.EXPO_PUBLIC_DATA_SOURCE = 'live';
-delete process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-delete process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL;
-delete process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
+delete process.env.EXPO_PUBLIC_SUPABASE_URL;
+delete process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-test('missing Firebase env vars -> LIVE_NOT_CONNECTED', async () => {
+test('missing Supabase env vars -> LIVE_NOT_CONNECTED', async () => {
   const { subscribeDevice } = await import('../src/services/deviceService.js');
   const { addContact } = await import('../src/services/contactService.js');
   const device = watch(subscribeDevice);
