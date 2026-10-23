@@ -13,7 +13,7 @@ import AppCard from '../components/AppCard.js';
 import { radius, shadows, spacing, typography } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme.js';
 import { formatDateTime, relativeTime } from '../utils/formatTime.js';
-import { PERSON2_ROUTES } from './person2Routes.js';
+import { ROUTES } from '../navigation/routes.js';
 
 export function LocationScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -115,7 +115,7 @@ export function LocationScreen({ navigation }) {
 
         {active ? (
           <Pressable
-            onPress={() => navigation?.navigate(PERSON2_ROUTES.AlertDetails, { alertId: active.id })}
+            onPress={() => navigation?.navigate(ROUTES.AlertDetails, { alertId: active.id })}
             accessibilityRole="button"
             accessibilityLabel="Open active accident alert"
             style={styles.activeAlertCard}
@@ -132,7 +132,7 @@ export function LocationScreen({ navigation }) {
         ) : null}
 
         <Pressable
-          onPress={() => navigation?.navigate(PERSON2_ROUTES.Alerts)}
+          onPress={() => navigation?.navigate(ROUTES.Alerts)}
           accessibilityRole="button"
           accessibilityLabel="Open alert history"
           style={styles.link}

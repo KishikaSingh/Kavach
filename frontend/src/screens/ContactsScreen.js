@@ -8,7 +8,7 @@ import AppButton from '../components/AppButton.js';
 import ConfirmationDialog from '../components/ConfirmationDialog.js';
 import { radius, spacing, typography } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme.js';
-import { PERSON2_ROUTES } from './person2Routes.js';
+import { ROUTES } from '../navigation/routes.js';
 
 export function ContactsScreen({ navigation }) {
   const { theme, isDark } = useTheme();
@@ -111,7 +111,7 @@ export function ContactsScreen({ navigation }) {
               title="Add Emergency Contact"
               icon="person-add-outline"
               variant="primary"
-              onPress={() => navigation?.navigate(PERSON2_ROUTES.ContactForm, {})}
+              onPress={() => navigation?.navigate(ROUTES.ContactForm, {})}
               style={styles.addBtn}
             />
           </View>
@@ -122,14 +122,14 @@ export function ContactsScreen({ navigation }) {
             title="No emergency contacts"
             body="Add someone the rider trusts. In case of an accident detection, their details will be immediately accessible."
             actionLabel="Add Contact"
-            onAction={() => navigation?.navigate(PERSON2_ROUTES.ContactForm, {})}
+            onAction={() => navigation?.navigate(ROUTES.ContactForm, {})}
           />
         }
         renderItem={({ item }) => (
           <ContactCard
             contact={item}
             busy={busyId === item.id}
-            onPress={(c) => navigation?.navigate(PERSON2_ROUTES.ContactForm, { contactId: c.id })}
+            onPress={(c) => navigation?.navigate(ROUTES.ContactForm, { contactId: c.id })}
             onCall={callContact}
             onSetPrimary={makePrimary}
             onDelete={confirmDelete}

@@ -3,7 +3,7 @@ import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'r
 import { useEmergencyNotification } from '../hooks/useEmergencyNotification.js';
 import { useTheme } from '../hooks/useTheme.js';
 import { getTone } from '../theme/colors.js';
-import { space, type } from './person2Theme.js';
+import { spacing } from '../constants/theme';
 
 export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
   const { theme, isDark } = useTheme();
@@ -117,27 +117,27 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
       {isSending ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.primary} size="small" />
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             Notifying registered emergency contacts with incident location…
           </Text>
         </View>
       ) : null}
 
       {status === 'sent' ? (
-        <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+        <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
           SMS alert sent to: <Text style={[styles.highlight, { color: colors.text }]}>{recipientNames || 'All registered contacts'}</Text>.
         </Text>
       ) : null}
 
       {status === 'demo_sent' ? (
-        <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+        <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
           Simulated notification dispatched to <Text style={[styles.highlight, { color: colors.text }]}>{recipientNames}</Text>.
         </Text>
       ) : null}
 
       {status === 'unconfigured' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             Live SMS gateway is unconfigured. Set <Text style={[styles.code, { color: colors.primary }]}>EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL</Text> in environment.
           </Text>
           <Pressable
@@ -153,7 +153,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'failed' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             {dispatchRecord?.error || 'Network error prevented sending emergency alert.'}
           </Text>
           <Pressable
@@ -169,7 +169,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'no_contacts' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             No emergency contacts have been registered to receive accident alerts.
           </Text>
           {onAddContacts ? (
@@ -187,7 +187,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {status === 'below_threshold' ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             Impact confidence ({((dispatchRecord?.confidence || 0) * 100).toFixed(0)}%) is below the configured threshold ({((dispatchRecord?.threshold || 0) * 100).toFixed(0)}%).
           </Text>
           <Pressable
@@ -203,7 +203,7 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
       {!status ? (
         <View style={styles.actionBlock}>
-          <Text style={[type.muted, styles.bodyText, { color: colors.textSecondary }]}>
+          <Text style={[styles.bodyText, { color: colors.textSecondary }]}>
             Trigger notification to registered emergency contacts with map location.
           </Text>
           <Pressable
@@ -226,17 +226,17 @@ export function EmergencyDispatchBanner({ alert, onAddContacts, style }) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: space.sm,
+    padding: spacing.sm,
     borderRadius: 10,
     borderWidth: 1,
-    marginTop: space.xs,
-    marginBottom: space.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: space.xs,
+    marginBottom: spacing.xs,
   },
   title: {
     fontSize: 14,
@@ -265,16 +265,16 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.xs,
+    gap: spacing.xs,
     marginTop: 4,
   },
   actionBlock: {
     marginTop: 4,
-    gap: space.xs,
+    gap: spacing.xs,
   },
   button: {
     alignSelf: 'flex-start',
-    paddingHorizontal: space.sm,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     borderRadius: 8,
     marginTop: 4,

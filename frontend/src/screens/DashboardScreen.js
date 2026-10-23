@@ -8,14 +8,15 @@ import { Ionicons } from '@expo/vector-icons';
 
 import ScreenContainer from '../components/ScreenContainer';
 import AppCard from '../components/AppCard';
-import MetricCard from '../components/MetricCard';
 import SectionHeader from '../components/SectionHeader';
 import StatusBadge from '../components/StatusBadge';
-import ConnectionIndicator from '../components/ConnectionIndicator';
 import DemoModeBanner from '../components/DemoModeBanner';
 import EmptyState from '../components/EmptyState';
 import AppButton from '../components/AppButton';
 import { StatusBanner } from '../components/ScreenStates.js';
+import HeroHelmetCard from '../components/HeroHelmetCard.js';
+import DashboardQuickNav from '../components/DashboardQuickNav.js';
+import DashboardMetricsGrid from '../components/DashboardMetricsGrid.js';
 
 import useDevice from '../hooks/useDevice';
 import useAlerts from '../hooks/useAlerts';
@@ -23,7 +24,7 @@ import useContacts from '../hooks/useContacts';
 import useNotifications from '../hooks/useNotifications';
 import { useTheme } from '../theme/ThemeProvider';
 
-import { radius, shadows, spacing, MIN_TOUCH } from '../constants/theme';
+import { radius, shadows, spacing } from '../constants/theme';
 import { formatDateTime, timeAgo } from '../utils/formatTime';
 import { formatCoord, getGpsState, GPS_LABELS, hasValidCoords, severityTone, smsLabel } from '../utils/deviceStatus';
 
@@ -158,147 +159,31 @@ export default function DashboardScreen({ navigation }) {
       ) : null}
 
       {/* Helmet Status Hero Card */}
-      <AppCard variant="hero" style={styles.heroCard}>
-        <View style={styles.heroTopRow}>
-          <View style={styles.heroIdentity}>
-            <View style={[styles.heroHelmetCircle, { backgroundColor: colors.primarySoft, borderColor: isDark ? colors.border : '#B2EBF2' }]}>
-              <Ionicons name="shield-checkmark" size={22} color={colors.safetyTeal} />
-            </View>
-            <View>
-              <Text style={[styles.heroDeviceName, { color: colors.text }]}>{device?.id || 'KAVACH-HLM-01'}</Text>
-              <Text style={[styles.heroSubId, { color: colors.safetyTeal }]}>Smart Safety System</Text>
-            </View>
-          </View>
-          <ConnectionIndicator
-            connected={connected}
-            label={connected ? 'Connected' : 'Disconnected'}
-            style={styles.heroBadge}
-          />
-        </View>
-
-        <View style={[styles.heroDivider, { backgroundColor: colors.border }]} />
-
-        <View style={styles.heroMiddleRow}>
-          <View style={styles.heroHealthBox}>
-            <View style={styles.heroHealthHeader}>
-              <Ionicons
-                name={health.tone === 'red' ? 'alert-circle' : health.tone === 'orange' ? 'warning' : 'checkmark-circle'}
-                size={18}
-                color={health.tone === 'red' ? colors.emergency : health.tone === 'orange' ? colors.warning : colors.safetyTeal}
-                style={styles.heroHealthIcon}
-              />
-              <Text style={[styles.heroHealthTitle, { color: colors.text }]}>{health.title}</Text>
-            </View>
-            <Text style={[styles.heroHealthSub, { color: colors.textSecondary }]}>{health.sub}</Text>
-          </View>
-
-          <Pressable
-            style={[styles.heroSettingsBtn, { backgroundColor: colors.primarySoft, borderColor: isDark ? colors.border : '#B2EBF2' }]}
-            onPress={() => navigation.navigate('Settings')}
-            accessibilityRole="button"
-            accessibilityLabel="Device Settings"
-          >
-            <Ionicons name="settings-outline" size={15} color={colors.safetyTeal} />
-            <Text style={[styles.heroSettingsText, { color: colors.safetyTeal }]}>Manage</Text>
-          </Pressable>
-        </View>
-      </AppCard>
+      <HeroHelmetCard
+        device={device}
+        connected={connected}
+        health={health}
+        onManagePress={() => navigation.navigate('Settings')}
+        colors={colors}
+        isDark={isDark}
+      />
 
       {/* Quick Action Navigation Grid */}
-      <View style={styles.quickActionsRow}>
-        <Pressable
-          style={styles.quickActionItem}
-          onPress={() => navigation.navigate('Location')}
-          accessibilityRole="button"
-          accessibilityLabel="Open Location"
-        >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
-            <Ionicons name="navigate-outline" size={22} color={colors.safetyTeal} />
-          </View>
-          <Text style={[styles.quickActionLabel, { color: colors.text }]}>Location</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.quickActionItem}
-          onPress={() => navigation.navigate('Contacts')}
-          accessibilityRole="button"
-          accessibilityLabel="Open Emergency Contacts"
-        >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
-            <Ionicons name="people-outline" size={22} color={colors.safetyTeal} />
-          </View>
-          <Text style={[styles.quickActionLabel, { color: colors.text }]}>Contacts</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.quickActionItem}
-          onPress={() => navigation.navigate('Alerts')}
-          accessibilityRole="button"
-          accessibilityLabel="Open Alerts"
-        >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
-            <Ionicons name="notifications-outline" size={22} color={colors.emergency} />
-          </View>
-          <Text style={[styles.quickActionLabel, { color: colors.text }]}>Alerts</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.quickActionItem}
-          onPress={() => navigation.navigate('Settings')}
-          accessibilityRole="button"
-          accessibilityLabel="Open Device Settings"
-        >
-          <View style={[styles.quickActionIconWrap, { backgroundColor: isDark ? colors.cardElevated : colors.card, borderColor: colors.border }]}>
-            <Ionicons name="hardware-chip-outline" size={22} color={colors.safetyTeal} />
-          </View>
-          <Text style={[styles.quickActionLabel, { color: colors.text }]}>Device</Text>
-        </Pressable>
-      </View>
+      <DashboardQuickNav
+        onNavigate={(route) => navigation.navigate(route)}
+        colors={colors}
+        isDark={isDark}
+      />
 
       {/* System Telemetry Metric Cards */}
-      <View style={styles.metricsGrid}>
-        <View style={styles.metricsCol}>
-          <MetricCard
-            icon="battery-charging-outline"
-            label="Battery Level"
-            value={device?.batteryLevel != null ? `${device.batteryLevel}%` : 'Unavailable'}
-            sublabel={device?.batteryLevel != null ? (device.batteryLevel < 20 ? 'Low Battery' : 'Optimal Charge') : 'No telematics'}
-            tone={device?.batteryLevel != null ? (device.batteryLevel < 20 ? 'orange' : 'teal') : 'grey'}
-          />
-        </View>
-        <View style={styles.metricsCol}>
-          <MetricCard
-            icon="navigate-outline"
-            label="GPS Fix"
-            value={gps.label}
-            sublabel={validCoords ? `${formatCoord(device.latitude)}, ${formatCoord(device.longitude)}` : 'No valid signal'}
-            tone={gps.tone}
-            onPress={() => navigation.navigate('Location')}
-          />
-        </View>
-      </View>
-
-      <View style={styles.metricsGrid}>
-        <View style={styles.metricsCol}>
-          <MetricCard
-            icon="sync-outline"
-            label="Last Sync"
-            value={device?.lastUpdated ? timeAgo(device.lastUpdated) : 'Unavailable'}
-            sublabel={connected ? 'Active heartbeat' : 'Device idle'}
-            tone={connected ? 'teal' : 'orange'}
-          />
-        </View>
-        <View style={styles.metricsCol}>
-          <MetricCard
-            icon="shield-checkmark-outline"
-            label="Accident Sensor"
-            value={accident.label}
-            sublabel={connected ? 'Real-time protection' : 'Last known state'}
-            tone={accident.tone}
-            onPress={() => navigation.navigate('Alerts')}
-          />
-        </View>
-      </View>
+      <DashboardMetricsGrid
+        device={device}
+        connected={connected}
+        gps={gps}
+        validCoords={validCoords}
+        accident={accident}
+        onNavigate={(route) => navigation.navigate(route)}
+      />
 
       {/* Helmet Location Preview Section */}
       <SectionHeader
@@ -564,129 +449,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
     opacity: 0.95,
   },
-  heroCard: {
-    marginBottom: spacing.lg,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  heroIdentity: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroHelmetCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: 'rgba(0, 184, 169, 0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 184, 169, 0.4)',
-  },
-  heroDeviceName: {
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-  heroSubId: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  heroBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: radius.pill,
-  },
-  heroDivider: {
-    height: 1,
-    marginVertical: spacing.md,
-  },
-  heroMiddleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  heroHealthBox: {
-    flex: 1,
-  },
-  heroHealthHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroHealthIcon: {
-    marginRight: 6,
-  },
-  heroHealthTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  heroHealthSub: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  heroSettingsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
-  },
-  heroSettingsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  quickActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  quickActionItem: {
-    alignItems: 'center',
-    width: '23%',
-  },
-  quickActionIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    ...shadows.sm,
-  },
-  quickActionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    marginBottom: spacing.md,
-    marginHorizontal: -4,
-  },
-  metricsCol: {
-    flex: 1,
-    paddingHorizontal: 4,
-  },
   mapBox: {
     height: 140,
     borderRadius: radius.md,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: spacing.md,
     overflow: 'hidden',
-    position: 'relative',
-    borderWidth: 1,
   },
   mapPinPulse: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -698,37 +473,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mapPinCenter: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
+    ...shadows.md,
   },
   mapCoordsBadge: {
     position: 'absolute',
     bottom: 8,
+    left: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    ...shadows.sm,
   },
   mapCoordsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
+    fontSize: 11,
+    fontWeight: '600',
   },
   locationFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.md,
   },
   coordsText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   metaText: {
@@ -736,22 +509,22 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cardNoPadding: {
-    padding: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   alertRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    minHeight: MIN_TOUCH + 10,
+    paddingVertical: spacing.md,
   },
   rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
   },
   alertIconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -763,13 +536,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 2,
   },
   alertTimestamp: {
     fontSize: 13,
     fontWeight: '700',
   },
   alertBottomLine: {
-    marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   alertMeta: {
     fontSize: 11,
@@ -781,15 +556,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm + 2,
   },
   contactAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
   },
   contactAvatarText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
   },
   contactTitleRow: {
@@ -801,10 +576,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   primaryBadge: {
+    marginLeft: spacing.xs,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: radius.pill,
-    marginLeft: 6,
+    borderRadius: 4,
   },
   primaryBadgeText: {
     fontSize: 9,
@@ -815,11 +590,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   callBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
+    marginLeft: spacing.sm,
   },
 });

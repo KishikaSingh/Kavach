@@ -31,3 +31,22 @@ export function clearAll() {
     demoStore.set('notifications', []);
   });
 }
+
+// Records an in-app notification (e.g. from accident alerts or system updates).
+export function createNotification({ type, title, body, alertId, deviceId } = {}) {
+  return runAction('createInAppNotification', [{ type, title, body, alertId, deviceId }], () => {
+    const list = demoStore.get('notifications') || [];
+    const notification = {
+      id: `em_${alertId || Date.now()}_${Date.now()}`,
+      type: type || 'alertUpdate',
+      title: title || 'Notification',
+      body: body || '',
+      timestamp: new Date().toISOString(),
+      read: false,
+      alertId: alertId ? String(alertId) : null,
+      deviceId: deviceId || 'HELMET_001',
+    };
+    demoStore.set('notifications', [notification, ...list]);
+    return notification;
+  });
+}

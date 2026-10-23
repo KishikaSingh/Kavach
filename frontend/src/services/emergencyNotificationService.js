@@ -4,9 +4,10 @@ import { normalizePhone } from '../utils/validators.js';
 import { formatDateTime } from '../utils/formatTime.js';
 import { googleMapsUrl } from '../utils/mapLinks.js';
 import { demoStore } from './demoStore.js';
-import { liveBackend } from './liveAdapter.js';
 import { subscribeAlerts } from './alertService.js';
 import { subscribeContacts } from './contactService.js';
+import { getSmsProvider } from './smsProvider.js';
+import { createNotification } from './inboxService.js';
 
 export const DEFAULT_CONFIDENCE_THRESHOLD = 0.6;
 const STORAGE_KEY = '@kavach:emergency_dispatches';
@@ -144,7 +145,6 @@ export function validateEmergencyContacts(contacts) {
 }
 
 function recordInAppNotification({ alertId, status, recipients, message, error }) {
-  const timestamp = new Date().toISOString();
   let title = 'Emergency contacts notified';
   let body = `Accident alert sent to ${recipients.map((r) => r.name).join(', ')}.`;
 
@@ -167,7 +167,7 @@ function recordInAppNotification({ alertId, status, recipients, message, error }
     type: 'alertUpdate',
     title,
     body,
-    timestamp,
+    timestamp: new Date().toISOString(),
     read: false,
     alertId: String(alertId),
   };
@@ -179,20 +179,10 @@ function recordInAppNotification({ alertId, status, recipients, message, error }
     } catch (_) {}
   } else {
     try {
-      const backend = liveBackend();
-      if (backend?.db && backend?.ref && backend?.push && backend?.set) {
-        backend
-          .ensureAuthenticated?.()
-          .then(async () => {
-            const userPath = await backend.userPath?.('notifications');
-            if (userPath) {
-              const notifRef = backend.push(backend.ref(backend.db, userPath));
-              await backend.set(notifRef, notification);
-            }
-          })
-          .catch(() => {});
-      }
-    } catch (_) {}
+      createNotification(notification).catch(() => {});
+    } catch (err) {
+      console.warn('Could not record in-app notification', err);
+    }
   }
 }
 
@@ -293,82 +283,43 @@ export async function dispatchEmergencyNotification(alert, options = {}) {
   let finalRecord;
 
   try {
-    const gatewayUrl =
-      options.gatewayUrl ||
-      process.env.EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL;
-
     const isLive = options.isLive ?? (process.env.EXPO_PUBLIC_DATA_SOURCE === 'live' || DATA_SOURCE === 'live');
+    const provider = options.smsProvider || getSmsProvider({
+      isDemo: options.isDemo,
+      isLive,
+      gatewayUrl: options.gatewayUrl,
+      apiKey: options.apiKey,
+    });
 
-    if (gatewayUrl) {
-      // Third-party Gateway Integration Boundary
-      const apiKey = options.apiKey || process.env.EXPO_PUBLIC_EMERGENCY_SMS_API_KEY;
-      const response = await fetch(gatewayUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(apiKey ? { Authorization: `Bearer ${apiKey}`, 'x-api-key': apiKey } : {}),
-        },
-        body: JSON.stringify({
-          alertId,
-          timestamp: alert.timestamp,
-          severity: alert.severity,
-          confidence,
-          user: options.userName || 'Helmet Rider',
-          recipients: valid,
-          message,
-          location: {
-            latitude: locationInfo.latitude,
-            longitude: locationInfo.longitude,
-            mapsUrl: locationInfo.mapsUrl,
-          },
-        }),
-      });
+    const dispatchResult = await provider.dispatch({
+      alertId,
+      alert,
+      recipients: valid,
+      message,
+      location: {
+        latitude: locationInfo.latitude,
+        longitude: locationInfo.longitude,
+        mapsUrl: locationInfo.mapsUrl,
+      },
+      confidence,
+      threshold,
+      user: options.userName,
+    });
 
-      if (!response.ok) {
-        const errText = await response.text().catch(() => '');
-        throw new Error(`SMS gateway error HTTP ${response.status}: ${errText || response.statusText}`);
-      }
-
-      finalRecord = {
-        alertId,
-        status: 'sent',
-        channel: 'gateway',
-        confidence,
-        threshold,
-        timestamp: new Date().toISOString(),
-        recipients: valid,
-        message,
-        fallbackUrl,
-      };
-    } else if (isLive && !options.isDemo) {
-      // In Live Mode without configured gateway credentials
-      finalRecord = {
-        alertId,
-        status: 'unconfigured',
-        channel: 'manual_fallback',
-        confidence,
-        threshold,
-        timestamp: new Date().toISOString(),
-        recipients: valid,
-        message,
-        fallbackUrl,
-        reason: 'Emergency SMS gateway is not configured. Set EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL.',
-      };
-    } else {
-      // In Demo Mode: simulate successful dispatch
-      finalRecord = {
-        alertId,
-        status: 'demo_sent',
-        channel: 'simulated_sms',
-        confidence,
-        threshold,
-        timestamp: new Date().toISOString(),
-        recipients: valid,
-        message,
-        fallbackUrl,
-        note: 'Demo mode: Emergency contacts alert simulated.',
-      };
-    }
+    finalRecord = {
+      alertId,
+      status: dispatchResult.status,
+      channel: dispatchResult.channel,
+      provider: dispatchResult.provider,
+      confidence,
+      threshold,
+      timestamp: dispatchResult.timestamp || new Date().toISOString(),
+      recipients: valid,
+      message,
+      fallbackUrl,
+      ...(dispatchResult.reason ? { reason: dispatchResult.reason } : {}),
+      ...(dispatchResult.note ? { note: dispatchResult.note } : {}),
+    };
   } catch (error) {
     finalRecord = {
       alertId,

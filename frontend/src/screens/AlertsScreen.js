@@ -10,7 +10,7 @@ import DemoModeBanner from '../components/DemoModeBanner.js';
 import ScreenContainer from '../components/ScreenContainer.js';
 import { useTheme } from '../theme/ThemeProvider.js';
 import { radius, shadows, spacing, typography } from '../constants/theme';
-import { PERSON2_ROUTES } from './person2Routes.js';
+import { ROUTES } from '../navigation/routes.js';
 
 const FILTERS = [
   { id: 'all', label: 'All Alerts' },
@@ -33,7 +33,7 @@ export function AlertsScreen({ navigation }) {
 
   const openDetails = useCallback(
     (alert) => {
-      navigation?.navigate(PERSON2_ROUTES.AlertDetails, { alertId: alert.id });
+      navigation?.navigate(ROUTES.AlertDetails, { alertId: alert.id });
     },
     [navigation]
   );

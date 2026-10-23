@@ -76,7 +76,7 @@ export async function initPushNotifications({ onAccidentAlertTap } = {}) {
   }
 
   const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-  const { saveExpoPushToken } = require('./firebaseService.js');
+  const { saveExpoPushToken } = require('./supabaseService.js');
   await saveExpoPushToken(token, Platform.OS);
 
   return { available: true, permission: 'granted', token };

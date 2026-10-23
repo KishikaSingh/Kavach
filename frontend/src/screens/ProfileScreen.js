@@ -101,7 +101,7 @@ export default function ProfileScreen({ navigation }) {
         <ProfileRow
           icon="hardware-chip-outline"
           label="Registered Device"
-          value={device?.deviceId || 'KAVACH-HLM-01'}
+          value={device?.deviceId || device?.id || 'HELMET_001'}
           onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
         />
         <ProfileRow

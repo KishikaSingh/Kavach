@@ -1,6 +1,6 @@
 // DEMO DATA ONLY. Everything here is simulated and must never be shown as a real
 // helmet reading. The app shows a "Demo" badge whenever dataSource === 'demo'.
-// Live data comes from Firebase (Phase 3) through a different code path.
+// Live data comes from Supabase through a different code path.
 
 const iso = (msAgo) => new Date(Date.now() - msAgo).toISOString();
 const MIN = 60 * 1000;
@@ -24,7 +24,9 @@ export const SCENARIOS = [
 // Initial device state exactly as in the brief: nothing known yet.
 export function emptyDevice() {
   return {
+    id: 'HELMET_001',
     deviceId: 'HELMET_001',
+    deviceName: 'Kavach Smart Helmet',
     helmetStatus: 'disconnected',
     accidentStatus: 'normal',
     latitude: null,
@@ -41,7 +43,9 @@ export function emptyDevice() {
 
 function healthyDevice() {
   return {
+    id: 'HELMET_001',
     deviceId: 'HELMET_001',
+    deviceName: 'Kavach Smart Helmet',
     helmetStatus: 'connected',
     accidentStatus: 'normal',
     latitude: 28.6692,

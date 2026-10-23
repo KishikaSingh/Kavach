@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider.js';
-import { space } from './person2Theme.js';
+import { spacing } from '../constants/theme';
 
 export function LoadingState({ label = 'Loading' }) {
   const { colors } = useTheme();
@@ -90,13 +90,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: space.lg,
+    padding: spacing.xxl,
   },
   centerText: {
     textAlign: 'center',
   },
   gap: {
-    marginTop: space.sm,
+    marginTop: spacing.sm,
   },
   subtitleText: {
     fontSize: 16,
@@ -106,18 +106,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   button: {
-    marginTop: space.md,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 10,
   },
   buttonText: {
     fontWeight: '700',
   },
   banner: {
-    padding: space.sm + 2,
+    padding: spacing.sm + 2,
     borderRadius: 10,
-    marginBottom: space.sm,
+    marginBottom: spacing.sm,
   },
   bannerText: {
     fontSize: 13,

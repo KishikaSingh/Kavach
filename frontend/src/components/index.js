@@ -10,6 +10,9 @@ export { default as DemoModeBanner } from './DemoModeBanner.js';
 export { default as ScreenContainer } from './ScreenContainer.js';
 export { default as DeviceHealthCard } from './DeviceHealthCard.js';
 export { default as ThemeSelector } from './ThemeSelector.js';
+export { default as HeroHelmetCard } from './HeroHelmetCard.js';
+export { default as DashboardQuickNav } from './DashboardQuickNav.js';
+export { default as DashboardMetricsGrid } from './DashboardMetricsGrid.js';
 
 export { LocationPreview } from './LocationPreview.js';
 export { AccidentAlertCard } from './AccidentAlertCard.js';

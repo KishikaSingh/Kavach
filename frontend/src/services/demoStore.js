@@ -2,7 +2,7 @@ import { buildInitialState, buildScenario } from '../data/mockData.js';
 
 // In-memory store used in DEMO mode only. Lives for as long as the app runs, so
 // adding a contact or resolving an alert really updates the app during a demo.
-// Nothing here talks to Firebase or hardware.
+// Nothing here talks to live backend services or hardware.
 
 const SIMULATED_LATENCY_MS = 250; // so loading states are visible
 const HEARTBEAT_MS = 5000;
