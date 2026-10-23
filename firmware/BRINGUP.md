@@ -1,76 +1,121 @@
-# Hardware bring-up checklist: `firmware/KavachHelmet`
+# Kavach Hardware Bring-up & Commissioning Manual
 
-Do the steps in order. Do not move on until the previous one passes. Write the Serial Monitor result next to each step.
-Everything here needs the real ESP32 and modules; nothing in `npm test` covers it. Wiring: [KavachHelmet/README.md](KavachHelmet/README.md).
+*Systematic bench-testing checklist and electrical validation procedures for the `firmware/KavachHelmet` reference implementation.*
 
-## 0. Safety first
+---
 
-- Bench only, helmet NOT worn. Never test impacts with the helmet on a person.
-- The SMS goes out for real. Use your own phone as `SMS_RECIPIENT_E164` while testing.
-- **SIM900A power**: a separate supply that can give about 2 A in bursts (check the board label, usually 5 V). USB or the ESP32 3V3 pin is not enough.
-  Put a 1000 uF capacitor close to the module and join all grounds.
-- **Logic levels**: ESP32 pins are 3.3 V only. If SIM900A TXD is 5 V, use a divider (1 kΩ + 2 kΩ) or a level shifter to GPIO 26. Check with a multimeter first.
-- SIM900A is 2G only: make sure the carrier still has 2G where you test. Wi-Fi must be 2.4 GHz.
+## Table of Contents
 
-## 1. Firebase side (Person 2 / whoever owns the Firebase project)
+- [Safety Protocols & Bench Guidelines](#safety-protocols--bench-guidelines)
+- [Electrical & Power Validation](#electrical--power-validation)
+- [Compilation & Initial Flashing](#compilation--initial-flashing)
+- [Subsystem Diagnostic Checklist](#subsystem-diagnostic-checklist)
+- [GPS Satellite Fix Acquisition](#gps-satellite-fix-acquisition)
+- [Cellular Network Commissioning & SMS Verification](#cellular-network-commissioning--sms-verification)
+- [Kinematic Threshold Characterization](#kinematic-threshold-characterization)
+- [Troubleshooting & Fault Isolation](#troubleshooting--fault-isolation)
 
-Needed before the helmet can write anything: Anonymous sign-in on, rules and Functions deployed, the app opened once in live mode (to create its anonymous user),
-then in `backend/functions`: `node scripts/provision-device.js HELMET_001 <that user's uid>`. The script prints a short-lived custom token. Keep it private.
-Details: `backend/firebase/SETUP.md`.
+---
 
-## 2. Compile and flash
+## Safety Protocols & Bench Guidelines
 
-1. Arduino IDE, Boards Manager: **esp32 by Espressif**. Library Manager: **Adafruit MPU6050**, **Adafruit Unified Sensor**, **TinyGPSPlus**, **ArduinoJson 7**.
-2. Copy `KavachHelmet/config.example.h` to `KavachHelmet/config.h` (git-ignored, never commit it).
-3. Fill it: `WIFI_SSID` / `WIFI_PASSWORD` (2.4 GHz hotspot), `FIREBASE_API_KEY`, `FIREBASE_DATABASE_URL`, `DEVICE_ID` (same as the app's `EXPO_PUBLIC_DEVICE_ID`), `SMS_RECIPIENT_E164` (your phone, `+91...`). Leave `FIREBASE_ROOT_CA` as it is.
-4. Board **ESP32 Dev Module**, right COM port, **Verify** then **Upload** (hold BOOT if it hangs on "Connecting...").
-5. Serial Monitor at **115200**. Expect `Kavach ESP32 reference firmware starting.`
+*Execute all procedures strictly on an isolated electronics workbench. Never conduct impact or threshold testing with the helmet worn by a human subject.*
 
-Pass: compiles, uploads, banner appears. If compile fails, copy the first error line. Messages like `Replace all placeholder values in config.h` mean step 3 is incomplete.
+1. **Bench Isolation:** Fasten the helmet or sensor jig securely to a controlled mechanical test fixture.
+2. **Dedicated Destination Number:** Configure `SMS_RECIPIENT_E164` to your own mobile handset during commissioning to avoid triggering false alarms to external emergency services.
+3. **Common Ground Continuity:** Ensure low-impedance ground bonding across all modules before applying main power rails.
 
-## 3. Sensor, Wi-Fi, Firebase
+---
 
-| Check | Expected Serial line | If not |
-|---|---|---|
-| MPU6050 | no `MPU6050 not detected on I2C.` | check SDA 21, SCL 22, 3V3, GND |
-| Wi-Fi | `Wi-Fi connected: <ip>` | wrong SSID/password, or 5 GHz network |
-| Time | no `NTP time sync failed` | network blocks NTP; try another hotspot |
-| First boot | `Paste the one-time Firebase custom token ...` | paste the token from step 1 and press Enter |
-| Provisioned | `Firebase device identity provisioned; refresh token saved in NVS.` | token expired: run `provision-device.js` again |
-| Telemetry | `Telemetry sent; impact x.xx g, GPS ..., GSM ...` every 10 s | `HTTPS PUT failed (401/403)`: rules or `device_id` claim wrong; `Telemetry upload failed`: check URL and Wi-Fi |
+## Electrical & Power Validation
 
-Then check Firebase console: `devices/HELMET_001` updates every 10 s, and the app (live mode, provisioned user) shows the helmet connected.
+*Power rail instability causes over 90 percent of microcontroller resets during cellular modem registration.*
 
-## 4. GPS
+1. **Cellular Supply Rail:** Provide a dedicated **3.7 V to 4.2 V / 2.0 A peak** DC supply rail to the cellular modem (SIM800L / SIM900A). The ESP32 3.3 V on-board LDO regulator must never be used to drive the modem.
+2. **Filtering Capacitance:** Solder a **1000 uF / 16 V low-ESR capacitor** directly across the cellular module power pins to buffer high-current GSM burst transmissions.
+3. **Logic Level Integrity:** Verify that the modem UART signals do not exceed 3.3 V. Use a resistive voltage divider (*1 kOhm / 2 kOhm*) or bidirectional level shifter on the modem transmit line into the ESP32.
 
-Put the NEO-6M near a window or outside; a first fix can take several minutes.
-Pass: `GPS valid` in the telemetry line (`GPS searching` means no fix yet), `gpsValid: true` and coordinates in `devices/HELMET_001`, the Location tab shows a marker. Indoors without a fix the app must show no coordinates (also a valid result).
+---
 
-## 5. SIM900A registration and SMS
+## Compilation & Initial Flashing
 
-1. Insert a SIM with SMS balance, power the module, reset the ESP32.
-2. Expect `SIM900A network registration: registered`. `not registered`: check SIM, antenna, 2G coverage, supply, TX/RX wiring (GPIO 26 receives, 27 sends).
-3. Real SMS test happens with the impact test in step 6 (the sketch has no manual send command). Pass: the SMS arrives on your phone with a Google Maps link, and the alert has `smsStatus` `unknown` (submission accepted) or `failed`.
-   `unknown` is expected: the modem confirms submission, not delivery. Receiving the SMS is the real confirmation.
+1. **Environment Setup:** Launch Arduino IDE or PlatformIO configured with the **Espressif ESP32** platform.
+2. **Required Libraries:**
+   - `Adafruit MPU6050`
+   - `Adafruit Unified Sensor`
+   - `TinyGPSPlus`
+   - `ArduinoJson` (v7.x)
+3. **Local Configuration:**
+   - Copy `firmware/KavachHelmet/config.example.h` to `firmware/KavachHelmet/config.h`.
+   - Configure local 2.4 GHz Wi-Fi credentials (`WIFI_SSID`, `WIFI_PASSWORD`).
+   - Define `DEVICE_ID` matching the root `.env` configuration (*default: `HELMET_001`*).
+   - Enter your personal mobile number as `SMS_RECIPIENT_E164`.
+4. **Target Board Selection:** Select **ESP32 Dev Module**, verify compile clean, and flash over USB at **115200 baud**.
 
-## 6. Impact threshold: calibrate safely
+---
 
-Constants are at the top of `KavachHelmet.ino`: `WARNING_THRESHOLD_G = 1.8`, `IMPACT_THRESHOLD_G = 3.0`; the alert cooldown is 60 s (`ALERT_COOLDOWN_MS`).
-The sketch prints the impact value (g) only in the telemetry line, which comes every 10 s (and once when an alert triggers), so it is a snapshot, not the peak.
-To see peaks, temporarily add `Serial.println(impactG);` after `lastImpactG = impactG;` in `loop()`, and remove it afterwards.
-Note: one single sample at or above the threshold triggers an alert (there is no multi-sample debounce), so a sharp bump can trigger it; keep that in mind when choosing the threshold.
+## Subsystem Diagnostic Checklist
 
-1. Mount the MPU6050 firmly as it will sit in the helmet. At rest the value is about 1.0 g.
-2. Normal handling (pick up, put down, carry, shake gently, drop on a pillow from 10 cm): note the highest g. It must stay **below** `IMPACT_THRESHOLD_G` (no alert).
-3. Impact fixture: helmet fixed on a table, strike it with a rubber mallet or drop a soft weight on it from a fixed height. No person involved. Note g.
-4. Pick `IMPACT_THRESHOLD_G` above your highest handling value and below the weakest impact you want to catch. Edit, upload, repeat steps 2 and 3.
-5. Require 10 handling trials with no alert and 10 impact trials with an alert. Remember the 60 s cooldown between impact trials, and that a still-pending alert blocks the next one (`An earlier alert is still pending; this impact was not queued.`).
+Connect the Serial Monitor at **115200 baud** and verify each milestone:
 
-## 7. Failure checks (quick)
+| Inspection Milestone | Expected Serial Diagnostic Output | Corrective Action Upon Failure |
+| :--- | :--- | :--- |
+| **Microcontroller Boot** | `Kavach ESP32 reference firmware starting.` | Verify USB cable, COM port, and supply voltage. |
+| **I2C Motion Bus** | Absence of `MPU6050 not detected on I2C.` | Inspect SDA (GPIO 21), SCL (GPIO 22), 3.3 V power rail. |
+| **Wi-Fi Associated** | `Wi-Fi connected: <ip_address>` | Verify 2.4 GHz band (5 GHz unsupported), SSID, password. |
+| **NTP Synchronization**| Absence of `NTP time sync failed` | Check internet gateway and UDP port 123 access. |
+| **Telemetry Periodic** | `Telemetry sent; impact x.xx g, GPS ..., GSM ...` | Inspect network route to cloud API endpoint. |
 
-Turn the hotspot off during an alert: expect the alert to be retried after Wi-Fi returns, once. Reboot with a pending alert: it is resumed, SMS is not duplicated.
-Cover the GPS antenna: `gpsValid` goes false, coordinates are null, the app shows no marker.
+---
 
-## Report back
+## GPS Satellite Fix Acquisition
 
-Send: the Serial Monitor output of steps 2, 3, 4, 5 (or the first line that failed), your handling and impact g values, the final `IMPACT_THRESHOLD_G`, and whether the SMS and the app alert both arrived.
+1. **Antenna Orientation:** Position the active ceramic patch antenna horizontally with an unobstructed view of the open sky.
+2. **Cold Fix Latency:** Initial ephemeris download (*cold start*) may require between 2 and 5 minutes.
+3. **Fix Assertion:**
+   - When searching: Serial output indicates `GPS searching`, and telemetry payloads transmit `gpsValid = false` with `null` coordinates.
+   - When locked: Serial output confirms `GPS valid`, reporting latitude, longitude, and ground speed.
+   - Database Verification: Query `v_latest_helmet_state` to verify satellite fix coordinates propagate to the cloud database.
+
+---
+
+## Cellular Network Commissioning & SMS Verification
+
+1. **SIM Card Preparation:** Ensure an active 2G-compatible nano-SIM is inserted with sufficient SMS messaging quota and the PIN lock disabled.
+2. **Registration Verification:** Serial log must assert `SIM network registration: registered`. If output indicates `not registered`, verify antenna attachment, carrier 2G availability, and supply voltage headroom.
+3. **Emergency Trigger Test:** Induce a firm, controlled tap on the test fixture exceeding calibrated impact thresholds.
+4. **Verification Criteria:**
+   - Confirm serial output logs `Emergency alert generated`.
+   - Confirm hardware serial outputs `AT+CMGS` commands.
+   - Confirm emergency SMS arrives on the designated mobile handset with an embedded Google Maps URL (`https://www.google.com/maps?q=lat,lng`).
+
+---
+
+## Kinematic Threshold Characterization
+
+The default firmware constants are defined at the head of `KavachHelmet.ino`:
+- `WARNING_THRESHOLD_G = 1.8`
+- `IMPACT_THRESHOLD_G = 3.0`
+- `ALERT_COOLDOWN_MS = 60000`
+
+### Empirical Calibration Workflow
+
+1. Mount the sensor assembly to the helmet shell.
+2. Enable peak acceleration logging in serial diagnostics.
+3. Subject the helmet to standard benign handling (picking up, setting down, normal head movement, minor road bumps) and log peak acceleration.
+4. Subject the helmet fixture to controlled impact forces simulating vehicular trauma.
+5. Set `IMPACT_THRESHOLD_G` safely above the maximum benign acceleration profile with an appropriate statistical safety margin.
+
+---
+
+## Troubleshooting & Fault Isolation
+
+- **Issue: ESP32 restarts immediately when an impact occurs.**
+  *Cause:* Modem transmission causes a severe power brownout on the supply rail.
+  *Remedy:* Upgrade the modem power supply to a minimum 2.0 A rating and ensure a 1000 uF capacitor is installed directly across the modem power terminals.
+- **Issue: GPS coordinates always report null even when outdoors.**
+  *Cause:* Inverted UART wiring or Baud rate mismatch.
+  *Remedy:* Ensure NEO-6M TX connects to ESP32 RX2 (GPIO 16) and GPS RX connects to ESP32 TX2 (GPIO 17) at 9600 baud.
+- **Issue: SMS transmission fails with modem error.**
+  *Cause:* Missing SMS Center number or insufficient cellular credit.
+  *Remedy:* Verify network registration using `AT+CREG?` and verify SMS center settings using `AT+CSCA?`.

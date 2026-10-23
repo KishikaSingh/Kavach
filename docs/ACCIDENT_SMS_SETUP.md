@@ -1,190 +1,123 @@
-# Accident Alert SMS Setup & Operation Guide
+# Kavach Accident SMS & Emergency Dispatch Setup Manual
 
-This guide describes the complete, end-to-end setup and operation for **Accident-Alert SMS Notifications** in the Kavach Smart Helmet ecosystem.
-
----
-
-## 1. Dual-Channel Architecture
-
-Kavach employs two independent, defense-in-depth SMS channels:
-
-```
-[ ESP32 Hardware: Helmet ]
-   |
-   +---> Channel 1: SIM800L / SIM900A Modem (Direct Hardware GSM)
-   |     - No smartphone tethering required
-   |     - No internet / cloud dependency
-   |     - Dispatches directly to SMS_RECIPIENT_E164 configured in firmware/KavachHelmet/config.h
-   |
-   +---> Channel 2: WiFi / Cellular Telemetry to Firebase RTDB (/alerts/{deviceId}/{alertId})
-         |
-         v
-     [ Firebase Cloud Function: onAccidentAlertCreated ]
-         |
-         +--> Claims idempotency lock at /pushDispatches/{deviceId}/{alertId}
-         +--> Reads rider's emergency contacts from /users/{uid}/contacts
-         +--> Dispatches SMS via AWS SNS direct publish (backend/functions/awsSns.js)
-         +--> Writes status to /smsDispatches/{deviceId}/{alertId} and /alerts/{deviceId}/{alertId}/smsStatus
-         +--> Dispatches Expo Push Notifications (expoPush.js)
-```
+*Comprehensive guide to configuring, calibrating, and operating dual-channel emergency messaging within the Kavach Smart Helmet ecosystem.*
 
 ---
 
-## 2. AWS Setup & IAM Security
+## Table of Contents
 
-### Step 2.1: Create the IAM User (Outside Terraform)
-To ensure access keys are never recorded in plaintext in Terraform state files, the IAM user and access keys are managed directly via AWS CLI or AWS Console:
-
-```bash
-# 1. Create the IAM user
-aws iam create-user --user-name kavach
-
-# 2. Create programmatic access keys
-aws iam create-access-key --user-name kavach
-```
-
-**Output:**
-```json
-{
-    "AccessKey": {
-        "UserName": "kavach",
-        "AccessKeyId": "AKIA...",
-        "SecretAccessKey": "...",
-        "Status": "Active"
-    }
-}
-```
-> [!IMPORTANT]
-> Save the `AccessKeyId` and `SecretAccessKey` securely. You will store them as Firebase Functions secrets. Never commit them to Git or Terraform files.
+- [Architectural Scope & Dual-Channel Model](#architectural-scope--dual-channel-model)
+- [Channel 1: Autonomous Hardware GSM Dispatch](#channel-1-autonomous-hardware-gsm-dispatch)
+- [Channel 2: Client & Cloud Gateway Dispatch](#channel-2-client--cloud-gateway-dispatch)
+- [Fallback Strategy: Native Handset SMS Intent](#fallback-strategy-native-handset-sms-intent)
+- [Message Template & Geolocation Payload](#message-template--geolocation-payload)
+- [Gateway Configuration & Environment Mapping](#gateway-configuration--environment-mapping)
+- [Testing & End-to-End Validation](#testing--end-to-end-validation)
 
 ---
 
-## 3. Terraform Modular Infrastructure Deployment
+## Architectural Scope & Dual-Channel Model
 
-The Terraform configuration attaches the least-privilege policy to user `kavach`, configures account-level Transactional SMS defaults, and sets up CloudWatch observability.
+Kavach employs an asymmetric **dual-channel messaging topology** to maximize transmission survivability during high-severity vehicular trauma:
 
-### Step 3.1: Initialize Terraform
-```bash
-cd terraform
-terraform init
-```
-
-### Step 3.2: Configure Environment
-Copy the example variables file:
-```bash
-cp environments/dev.tfvars.example environments/dev.tfvars
-```
-Adjust parameters in `environments/dev.tfvars` if necessary:
-```hcl
-project_name               = "kavach"
-environment                = "dev"
-aws_region                 = "ap-south-1"
-iam_user_name              = "kavach"
-sns_sms_type               = "Transactional"
-sns_monthly_spend_limit_usd = 1
-```
-
-### Step 3.3: Validate & Apply
-```bash
-terraform validate
-terraform plan -var-file="environments/dev.tfvars"
-terraform apply -var-file="environments/dev.tfvars"
-```
-
-The applied policy permits:
-- `sns:Publish` on `Resource: "*"` (required for direct-to-phone SMS).
-- Scoped strictly to `aws:RequestedRegion = "ap-south-1"`.
-- `sns:GetSMSAttributes` and `sns:SetSMSAttributes`.
-
----
-
-## 4. AWS SNS SMS Sandbox Configuration (Critical Step)
-
-By default, all new AWS accounts operate in **SMS Sandbox mode**. SMS cannot be sent to unverified numbers.
-
-1. Open the [AWS SNS Console](https://console.aws.amazon.com/sns/v3/home).
-2. Set your region to **Mumbai (`ap-south-1`)**.
-3. Under **Text messaging (SMS)** in the left sidebar, scroll down to **Sandbox destination phone numbers**.
-4. Click **Add phone number**.
-5. Enter each emergency contact's phone number in E.164 format (e.g., `+919876543210`).
-6. A one-time verification code (OTP) will be sent via SMS to that phone. Enter the code to verify.
-7. Repeat for all numbers intended for testing.
-
-> [!NOTE]
-> When moving to production across India or globally, request an exit from the SMS Sandbox via AWS Support and register the required Principal Entity and Headers under Indian DLT regulations.
-
----
-
-## 5. Firebase Cloud Functions Configuration
-
-Configure your AWS credentials as secrets in Firebase Cloud Functions:
-
-### Using Firebase CLI (Recommended)
-```bash
-cd backend/functions
-
-# Set AWS secrets
-firebase functions:secrets:set AWS_ACCESS_KEY_ID
-# (Paste AKIA...)
-
-firebase functions:secrets:set AWS_SECRET_ACCESS_KEY
-# (Paste secret key...)
-
-firebase functions:config:set aws.region="ap-south-1"
-```
-
-### Deploy Cloud Functions
-```bash
-firebase deploy --only functions
+```text
++-------------------------------------------------------------------------------+
+|                       VEHICULAR IMPACT TRAUMA DETECTED                        |
++-------------------------------------------------------------------------------+
+          |                                                   |
+   [Out-of-Band Channel 1]                             [IP Telemetry Channel 2]
+   Autonomous Hardware GSM                             Supabase Realtime Stream
+          |                                                   |
+          v                                                   v
++-----------------------------+                     +---------------------------+
+| SIM800L / SIM900A MODEM     |                     | KAVACH MOBILE APP         |
+| Direct GSM Cellular Network |                     |                           |
+| - Zero phone dependency     |                     | - Confidence evaluation   |
+| - Zero internet dependency  |                     | - HTTP SMS Gateway Hook   |
+| - Sends to fixed recipient  |                     | - Native SMS Fallback     |
++-----------------------------+                     +---------------------------+
+          |                                                   |
+          v                                                   v
++-----------------------------+                     +---------------------------+
+| PRIMARY EMERGENCY RECIPIENT |                     | ALL REGISTERED CONTACTS   |
++-----------------------------+                     +---------------------------+
 ```
 
 ---
 
-## 6. End-to-End Verification & Testing
+## Channel 1: Autonomous Hardware GSM Dispatch
 
-### 6.1 Unit Tests (Local, No Cloud Dependency)
-Run the backend test suite:
-```bash
-cd backend/functions
-npm test
-```
-Validates:
-- Phone number normalization (E.164 conversion, 10-digit Indian numbers -> `+91`).
-- Emergency message format and GPS Google Maps link generation.
-- Mocked SNS direct publish with Transactional message attributes.
-- Contact iteration and aggregate status reporting.
+### Operating Characteristics
+- **Independence:** Operates directly on the embedded ESP32 microcontroller without requiring smartphone tethering, Bluetooth pairing, or mobile internet availability.
+- **Protocol:** Standard 3GPP AT command sequences (`AT+CMGS`) transmitted over hardware UART serial pins (GPIO 26 RX, GPIO 27 TX).
+- **Target Recipient:** Configured in `firmware/KavachHelmet/config.h` as `SMS_RECIPIENT_E164`.
 
-### 6.2 Simulated Cloud Trigger (Using Firebase Admin SDK or Console)
-You can trigger an alert directly in the Firebase RTDB Console to verify end-to-end SMS dispatch:
-1. Navigate to `/alerts/HELMET_001/test_alert_001`.
-2. Write:
-   ```json
-   {
-     "deviceId": "HELMET_001",
-     "timestamp": 1729640000000,
-     "impactG": 4.8,
-     "tiltDeg": 68.2,
-     "severity": "CRITICAL",
-     "gpsValid": true,
-     "latitude": 19.0760,
-     "longitude": 72.8777
-   }
-   ```
-3. Check the function logs in the Firebase Console:
-   - Verifies `onAccidentAlertCreated` claimed the dispatch lock.
-   - Verifies contact lookup at `/users/{ownerUid}/contacts`.
-   - Dispatches SNS message.
-   - Check `/smsDispatches/HELMET_001/test_alert_001` in RTDB for `{ status: "sent", messageId: "..." }`.
-   - Contact phone receives the SMS within 2–5 seconds.
+### Hardware Configuration Checklist
+1. Ensure an active nano-SIM card is inserted with international SMS messaging quota enabled.
+2. Confirm the modem power rail provides a dedicated 3.7 V to 4.2 V supply capable of sustaining 2.0 A peak surges.
+3. Verify modem network registration output returns `+CREG: 0,1` (*Home Network*) or `+CREG: 0,5` (*Roaming*).
 
 ---
 
-## 7. Troubleshooting Guide
+## Channel 2: Client & Cloud Gateway Dispatch
 
-| Issue | Root Cause | Resolution |
-|---|---|---|
-| `AccessDenied: User ... is not authorized to perform: sns:Publish` | IAM policy scoped to Topic ARN rather than wildcard `*` | Apply the updated Terraform `security` module (`modules/security/main.tf`). Direct-to-phone SMS requires `Resource: "*"`. |
-| `SMS Sandbox: Number not verified` | Recipient number not verified in AWS SNS console | Add and verify the phone number in the AWS SNS Sandbox console (see Section 4). |
-| `status: "unconfigured"` in `/smsDispatches` | AWS credentials missing in Cloud Functions environment | Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` via `firebase functions:secrets:set` or `.env`. |
-| Coordinates say "Location unavailable" | GPS module had no satellite lock (`gpsValid: false`) | Normal behavior when indoor. Outdoor bench test or simulated GPS required. |
-| Duplicate SMS received | Idempotency key not claimed | Ensure device sends unique `{alertId}`. The Cloud Function's atomic `pushDispatches` transaction prevents duplicate cloud sends. |
+### Operating Characteristics
+- **Selective Escalation:** Incidents surfaced over Supabase Realtime are filtered by the incident confidence scoring engine (*default threshold: `0.60`*).
+- **Contact Priority:** Resolves all registered emergency contacts from Supabase `emergency_contacts`, prioritizing designated primary contacts.
+- **Webhook Integration:** Dispatches formatted emergency payloads over HTTPS to an external SMS gateway or communication webhook (*e.g., Twilio, AWS SNS, or custom HTTP relay*).
+
+---
+
+## Fallback Strategy: Native Handset SMS Intent
+
+If no external SMS gateway is configured in production live mode:
+
+1. The incident banner reports delivery status as `unconfigured`.
+2. The user interface exposes a **Send SMS Manually** action button.
+3. Tapping the action activates the mobile operating system's native SMS intent (`sms:+919876543210?body=...`), pre-populating the emergency text, recipient, and Google Maps location URL directly into the rider's native messaging application.
+
+---
+
+## Message Template & Geolocation Payload
+
+Emergency messages conform to standard concise emergency formats:
+
+### Format with Valid Satellite Fix
+```text
+EMERGENCY ALERT: Kavach Smart Helmet detected a severe impact for rider [Rider Name] at [Detection Time].
+Location: https://www.google.com/maps?q=12.9716,77.5946
+Device: HELMET_001
+Please verify safety immediately.
+```
+
+### Format with Degraded / Unavailable Satellite Fix
+```text
+EMERGENCY ALERT: Kavach Smart Helmet detected a severe impact for rider [Rider Name] at [Detection Time].
+Location: GPS fix unavailable (satellite searching)
+Device: HELMET_001
+Please verify safety immediately.
+```
+
+---
+
+## Gateway Configuration & Environment Mapping
+
+Configure external gateway endpoints in the centralized repository root `.env` file:
+
+```properties
+# Primary external HTTP SMS dispatch gateway
+EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL=https://api.sms-provider.com/v1/dispatch
+
+# Optional authorization API key or Bearer token
+EXPO_PUBLIC_EMERGENCY_SMS_API_KEY=your-secure-gateway-token
+```
+
+*Note: Bundlers, migration scripts, and test harnesses automatically resolve `.env` from the repository root.*
+
+---
+
+## Testing & End-to-End Validation
+
+1. **In-App Demo Simulation:** Run with `EXPO_PUBLIC_DATA_SOURCE=demo`. Trigger an accident alert; observe the delivery banner display `demo_sent`.
+2. **Unconfigured Gateway Verification:** Run in live mode without gateway variables. Trigger an alert; observe the status display `unconfigured` and confirm the native SMS intent button functions correctly.
+3. **Automated Verification:** Execute `npm test -- emergency` to validate phone normalization, duplicate suppression, and gateway error recovery.

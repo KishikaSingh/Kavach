@@ -1,68 +1,120 @@
-# Build an Android APK (EAS Build)
+# Kavach Android Production Build & EAS Packaging Manual
 
-An APK can be installed on any Android phone without Expo Go. `frontend/eas.json` is already in the repo. Run every command below from the `frontend/` folder:
+*Authoritative guide to compiling standalone Android APK artifacts and distribution bundles using Expo Application Services (EAS).*
 
-| Profile | Result | Data |
-|---|---|---|
-| `preview` | installable APK | demo data (no Firebase needed) |
-| `preview-live` | installable APK | real Firebase (needs the `EXPO_PUBLIC_*` values) |
-| `production` | AAB for the Play Store | |
+---
 
-## One-time setup
+## Table of Contents
 
-0. The config file must be named `app.json` in lowercase (EAS runs on Linux). It is already correct on `integration`; a test guards it.
+- [Architectural Scope & Build Profiles](#architectural-scope--build-profiles)
+- [Prerequisites & Account Initialization](#prerequisites--account-initialization)
+- [Project Configuration & Dynamic Mapping](#project-configuration--dynamic-mapping)
+- [Compiling Standalone Demo APK](#compiling-standalone-demo-apk)
+- [Compiling Production Live APK (Supabase Backend)](#compiling-production-live-apk-supabase-backend)
+- [Device Sideloading & Installation](#device-sideloading--installation)
+- [Troubleshooting Cloud Build Pipeline](#troubleshooting-cloud-build-pipeline)
 
-1. Create a free account at https://expo.dev/signup and verify the email.
-2. Install the tool and log in (current Node.js LTS):
+---
+
+## Architectural Scope & Build Profiles
+
+Compiling a standalone Android APK enables evaluators and field testers to run the Kavach mobile client on physical smartphones without installing Expo Go or maintaining a local Node.js development server.
+
+Build targets are defined in `frontend/eas.json`:
+
+| Build Profile | Artifact Format | Target Environment | Primary Use Case |
+| :--- | :--- | :--- | :--- |
+| **`preview`** | Standalone `.apk` | In-Memory Demo Mode | Offline presentations and zero-hardware evaluations |
+| **`preview-live`** | Standalone `.apk` | Live Supabase Cloud | Real hardware field testing and bench evaluation |
+| **`production`** | Optimized `.aab` | Google Play Store | Production application store distribution |
+
+---
+
+## Prerequisites & Account Initialization
+
+1. **Expo Account:** Register a free developer account at [expo.dev](https://expo.dev/signup).
+2. **EAS CLI Installation:** Install the cloud builder CLI globally:
    ```bash
    npm install -g eas-cli
+   ```
+3. **Authentication:** Log in to your Expo account via the terminal:
+   ```bash
    eas login
    ```
-3. Create the project and note its id (`eas init` prints it; also shown on expo.dev). The app reads it from the environment
-   (`frontend/app.config.js`), so nothing is hard-coded in `app.json`:
+
+---
+
+## Project Configuration & Dynamic Mapping
+
+1. Link the local project to EAS:
    ```bash
+   cd frontend
    eas init
    ```
-   Then set `EXPO_PUBLIC_EAS_PROJECT_ID=<that id>` for the build (in `frontend/.env.local` for local runs, and with `eas env:create` for EAS builds).
+2. Note the generated **Project ID** (*UUID format*).
+3. Record this identifier in the repository root `.env` file:
+   ```properties
+   EXPO_PUBLIC_EAS_PROJECT_ID=your-eas-project-id
+   ```
+4. *Important Invariant:* The main configuration file must remain named `app.json` strictly in lowercase. Linux cloud builders reject uppercase filenames (`App.json`).
 
-## Build the demo APK
+---
+
+## Compiling Standalone Demo APK
+
+To produce a self-contained APK running the 10-scenario simulation engine:
 
 ```bash
-npm install
-npm test                                  # make sure everything is green first
+cd frontend
+
+# Verify test suites pass cleanly before launching cloud build
+npm test
+
+# Trigger the remote cloud build
 eas build -p android --profile preview
 ```
 
-The build runs in Expo's cloud (a free account may wait in a queue, typically 10 to 30 minutes).
-When it finishes, the terminal and https://expo.dev show a download link and a QR code.
+The cloud worker will compile the Android bundle in Expo's infrastructure. Upon completion, the terminal outputs a direct download URL and terminal QR code.
 
-## Install on a phone
+---
 
-1. Open the link on the phone (or scan the QR code) and download the `.apk`.
-2. When Android asks, allow "Install unknown apps" for the browser, then install.
-3. Open **Smart Helmet**. In the preview profile it runs on demo data; use the **Demo** button (bottom-left).
+## Compiling Production Live APK (Supabase Backend)
 
-Optional, with a USB cable and `adb`: `adb install path/to/app.apk`.
+For a live build connected to the Supabase cloud infrastructure:
 
-## Live APK (real Firebase)
+1. Configure production environment secrets within EAS:
+   ```bash
+   eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://your-project.supabase.co --visibility sensitive
+   eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY --value your-anon-key --visibility sensitive
+   eas env:create --environment preview --name EXPO_PUBLIC_DATA_SOURCE --value live --visibility plain
+   eas env:create --environment preview --name EXPO_PUBLIC_DEVICE_ID --value HELMET_001 --visibility plain
+   ```
+2. Execute the production preview build:
+   ```bash
+   eas build -p android --profile preview-live
+   ```
 
-Firebase values are baked into the app at build time, so set them before building:
+---
+
+## Device Sideloading & Installation
+
+### Method A: Direct Browser Download
+1. Open the generated download link on the target Android device.
+2. When prompted by Android security, enable **Install unknown apps** for the web browser.
+3. Complete installation and open **Smart Helmet**.
+
+### Method B: ADB Sideloading via USB
+Connect the Android device with USB Debugging enabled:
 
 ```bash
-eas env:create --environment preview --name EXPO_PUBLIC_FIREBASE_API_KEY --value <value> --visibility sensitive
-# repeat for each EXPO_PUBLIC_FIREBASE_* name in .env.example, and EXPO_PUBLIC_DEVICE_ID
-eas build -p android --profile preview-live
+adb install path/to/kavach-build.apk
 ```
 
-(`eas env:create --help` shows the exact options for your eas-cli version.) Do not commit these values.
+---
 
-## Push notifications
+## Troubleshooting Cloud Build Pipeline
 
-Person 2 already wired this: `expo-notifications` is in `app.json`, `App`/`AppNavigator` call `initPushNotifications`, and the Cloud Function sends the push.
-It does not work in Expo Go; it needs a built APK. What is still left (see `backend/firebase/SETUP.md` for the details):
-
-1. `EXPO_PUBLIC_EAS_PROJECT_ID` set (above), and an FCM credential uploaded with `eas credentials`
-   (`google-services.json` for Android app `com.smarthelmet.app`, referenced from `app.json` as `expo.android.googleServicesFile`).
-2. Live Firebase values in the build (`preview-live`), Cloud Functions deployed, and the phone's anonymous user provisioned as an owner
-   of the helmet (`node scripts/provision-device.js HELMET_001 <uid>` in `backend/functions`).
-3. Install the APK, allow notifications, then create an alert (helmet, or a manual write) and check that the push arrives and that tapping it opens Alert Details.
+- **Issue: Cloud build fails during gradle compilation.**
+  *Resolution:* Ensure that `app.json` has valid `android.package` identifiers (*e.g., `com.kavach.smarthelmet`*) and that SDK dependencies conform to Expo SDK 57 release requirements (`npx expo-doctor`).
+- **Issue: Live APK crashes on launch.**
+  *Resolution:* Verify that `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` were correctly provisioned in EAS environment variables prior to triggering the build.

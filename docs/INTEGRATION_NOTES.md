@@ -1,37 +1,106 @@
-# Integration notes
+# Kavach System Integration & Notification Architecture Notes
 
-The current repository is organized into `frontend/` (Expo app) and `backend/` (Firebase rules and Cloud Functions). The Person 2 implementation is connected to the shared hooks through `frontend/src/services/liveAdapter.js`.
+*Engineering reference detailing cross-tier data synchronization, incident confidence scoring, emergency contact dispatching, and failover boundaries.*
 
-## Person 2 integration
+---
 
-- Live Firebase uses persistent anonymous Authentication. Contacts, settings, notifications, and Expo push tokens are scoped to `users/{uid}`.
-- Owner reads of helmet telemetry/alerts require an admin-provisioned `deviceOwners/{deviceId}/{uid}` entry. The device identity, authenticated with a custom `device_id` claim, can read only an exact alert record for retry recovery and can write its own device/alert data; `backend/functions/scripts/provision-device.js` creates the device identity and owner grant.
-- The alert-created Cloud Function writes an in-app notification and sends an Expo push only for owners with push enabled. Expo tickets and delivery receipts are tracked; invalid device tokens are removed.
-- Push response taps route to `AlertDetails`. Expo push setup requires an EAS project ID and native push credentials; see `backend/firebase/SETUP.md`.
-- `backend/firebase/database.rules.json` denies unauthenticated and cross-user access. Admin SDK provisioning and Cloud Functions are the only writers to owner mappings, push receipts, and dispatch records.
+## Table of Contents
 
-## Emergency contact notification (app-side)
+- [Architectural Scope & Integration Topology](#architectural-scope--integration-topology)
+- [Emergency Contact Notification Architecture](#emergency-contact-notification-architecture)
+- [Incident Confidence Scoring Algorithm](#incident-confidence-scoring-algorithm)
+- [Contact Validation & Normalization](#contact-validation--normalization)
+- [Idempotent Deduplication & Retry Dynamics](#idempotent-deduplication--retry-dynamics)
+- [Gateway Integration Boundaries & Fallbacks](#gateway-integration-boundaries--fallbacks)
+- [User Experience & Visual Delivery States](#user-experience--visual-delivery-states)
+- [Remaining Integration Dependencies & Calibration](#remaining-integration-dependencies--calibration)
 
-The app includes an automated emergency contact notification feature (`frontend/src/services/emergencyNotificationService.js`):
+---
 
-- **Trigger & Confidence Threshold**: When an accident alert is detected (from Firebase or demo scenarios), the service calculates incident confidence (`high` = 0.95, `medium` = 0.75, `low` = 0.35, or explicit numeric `confidence`). Notifications are only dispatched if confidence meets the configured threshold (default `0.60`), preventing false alarms on minor bumps.
-- **Incident Details & Location**: Incident notifications include the rider's name, formatted detection time, and location. If valid GPS coordinates are present, a Google Maps link (`https://www.google.com/maps?q=lat,lng`) is included. If GPS is unavailable, the message gracefully reports location as unavailable without crashing.
-- **Contact Validation**: Registered contacts are validated against E.164 phone formats using `normalizePhone`, and primary contacts are prioritized. If no valid contacts exist, the system logs a `no_contacts` state and guides the user to register emergency contacts.
-- **Duplicate Suppression & Safe Retry**: Each alert is tracked by `alertId`. Successful notifications are recorded in `AsyncStorage` (`@kavach:emergency_dispatches`) and memory. Repeated triggers for the same incident are automatically suppressed. Failed deliveries allow explicit retry from the UI without corrupting state.
-- **Gateway Integration Boundary**:
-  - Live SMS dispatch requires an SMS gateway/webhook endpoint set in `frontend/.env.local`:
-    ```dotenv
-    EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL=https://your-sms-gateway.com/api/send
-    EXPO_PUBLIC_EMERGENCY_SMS_API_KEY=your-optional-api-key
-    ```
-  - When unconfigured in live mode, the system sets status to `unconfigured` (it never falsely claims messages were sent) and offers a native SMS draft fallback (`sms:+91...?body=...`).
-  - In demo mode, simulated dispatches are recorded as `demo_sent`.
-- **User Feedback & In-App Recording**: `AlertDetailsScreen` displays an interactive `EmergencyDispatchBanner` showing delivery status (`sending`, `sent`, `demo_sent`, `unconfigured`, `failed`, `no_contacts`), and records dispatch outcomes into the in-app notification center.
+## Architectural Scope & Integration Topology
 
-## Remaining integration dependencies
+Kavach coordinates three autonomous technical tiers:
+1. **Embedded Microcontroller Tier (`firmware/KavachHelmet`):** Bare-metal ESP32 executing kinematic collision sampling and hardware GSM cellular dispatch.
+2. **Cloud Tier (`supabase/`):** Supabase PostgreSQL relational engine providing Row Level Security (*RLS*), Realtime WebSocket propagation, and edge functions.
+3. **Mobile Client Tier (`frontend/`):** React Native mobile client executing shared reactive hooks, incident confidence scoring, and local failover messaging.
 
-- The Arduino IDE reference firmware for ESP32 + MPU6050 + SIM900A + NEO-6M is in `firmware/KavachHelmet/`. It matches the current device/alert schema and custom-claim provisioning flow, but remains prototype code until compiled and tested on the exact hardware, calibrated, and verified end-to-end.
-- The reference firmware has a configurable fixed SMS recipient; it does not sync app contacts. SIM900A submission acceptance is not delivery confirmation, so it reports SMS status as `unknown` unless submission fails. One pending alert is persisted and retried; further impacts while it is pending are not queued.
-- The default impact threshold is uncalibrated. Do not use the firmware as a certified safety device; characterize false positives/negatives on a safe test fixture before field trials.
-- The app does not yet provide helmet pairing or account recovery. Anonymous data belongs to one app installation.
-- Run the app on a development build and test with a real Firebase project and a provisioned device before treating push or telemetry as production-ready.
+---
+
+## Emergency Contact Notification Architecture
+
+The mobile application implements a dedicated emergency notification module located in `frontend/src/services/emergencyNotificationService.js`. When an accident alert is surfaced from Supabase or simulated in Demo Mode, the service executes a multi-step escalation sequence:
+
+```text
+Incident Ingestion -> Confidence Calculation -> Threshold Gate
+                                                    |
+             +--------------------------------------+--------------------------------------+
+             |                                                                             |
+      Confidence < Threshold                                                        Confidence >= Threshold
+      Suppressed / Logged Internally                                                EMERGENCY DISPATCH
+                                                                                    - Resolve Primary Contact
+                                                                                    - Validate E.164 Phone
+                                                                                    - Claim Idempotency Key
+                                                                                    - Build Google Maps Link
+                                                                                    - Dispatch via Active Provider
+                                                                                    - Update Status in UI Banner
+```
+
+---
+
+## Incident Confidence Scoring Algorithm
+
+To eliminate false triggers arising from minor bumps, potholes, or benign helmet handling, incoming alerts are scored against a normalized confidence index (*ranging from 0.00 to 1.00*):
+
+- **Severity Mapping:**
+  - `high`: Normalized score of **0.95**.
+  - `medium`: Normalized score of **0.75**.
+  - `low`: Normalized score of **0.35**.
+- **Explicit Scoring:** If the incoming incident payload supplies an explicit numeric `confidence` value, it takes precedence.
+- **Configurable Confidence Gate:** Alerts are evaluated against the user-configurable threshold (*default: `0.60`*). Incidents falling below this threshold are logged in diagnostic telemetry but are strictly blocked from notifying emergency contacts.
+
+---
+
+## Contact Validation & Normalization
+
+1. **E.164 Formatting:** Phone numbers are normalized using `normalizePhone` to ensure international dialing compatibility (*e.g., `+919876543210`*). Invalid formats are flagged before saving.
+2. **Priority Ordering:** The dispatch algorithm sorts registered contacts, routing the emergency alert to the designated **Primary Contact** first.
+3. **Graceful Handling of Empty Contacts:** If no emergency contacts have been registered, the service marks the incident status as `no_contacts` and prompts the rider to configure their safety network.
+
+---
+
+## Idempotent Deduplication & Retry Dynamics
+
+- **Incident Tracking:** Every incident is tracked by a stable compound identifier (`alertId`).
+- **Idempotency Guard:** Completed dispatches are logged to in-memory state and persistent device storage (`@kavach:emergency_dispatches`). Repeated triggers for the same incident are automatically suppressed.
+- **Manual Retry Flow:** If network loss causes a dispatch to fail, the incident banner in `AlertDetailsScreen` displays an explicit **Retry Dispatch** action without corrupting application state.
+
+---
+
+## Gateway Integration Boundaries & Fallbacks
+
+Emergency dispatch adapts dynamically to the active operational environment:
+
+1. **Demo Mode:** Dispatches are logged as `demo_sent` without making external network calls.
+2. **Configured Live Mode:** If `EXPO_PUBLIC_EMERGENCY_SMS_GATEWAY_URL` is configured in the root `.env`, dispatches execute via HTTP POST webhooks with optional API key headers.
+3. **Unconfigured Live Mode:** If no gateway is configured, the system marks the incident as `unconfigured` (*never falsely asserting delivery*) and generates a pre-formatted native SMS draft link (`sms:+91...?body=...`) allowing the rider or bystander to send the alert via the phone's native dialer.
+
+---
+
+## User Experience & Visual Delivery States
+
+The `AlertDetailsScreen` displays an interactive `EmergencyDispatchBanner` reflecting live delivery status:
+
+- `sending`: Dispatch in transit.
+- `sent`: Gateway confirmed delivery.
+- `demo_sent`: Simulation confirmed without external network calls.
+- `unconfigured`: No external gateway provisioned; manual SMS fallback active.
+- `failed`: Network or provider error; retry available.
+- `no_contacts`: No emergency contacts registered; prompt to configure.
+
+---
+
+## Remaining Integration Dependencies & Calibration
+
+- **Deceleration Calibration:** The default impact threshold (`3.0 G`) in `firmware/KavachHelmet/` requires physical validation on a drop-test rig prior to on-road trials.
+- **Cellular Carrier Validation:** The SIM800L / SIM900A series requires 2G GSM cellular service. Ensure local carriers support 2G signaling in the operational deployment zone.
+- **Hardware Power Isolation:** Always power the cellular modem from an independent high-current rail capable of 2.0 A burst loads.

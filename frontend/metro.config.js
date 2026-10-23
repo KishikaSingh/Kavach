@@ -3,7 +3,10 @@ const path = require('node:path');
 const { getDefaultConfig } = require('expo/metro-config');
 
 // Ensure root .env is loaded as the main environment configuration
-const rootEnvPath = path.resolve(__dirname, '..', '.env');
+const rootEnvPath = fs.existsSync(path.resolve(__dirname, '..', '.env'))
+  ? path.resolve(__dirname, '..', '.env')
+  : path.resolve(process.cwd(), '.env');
+
 if (fs.existsSync(rootEnvPath)) {
   const content = fs.readFileSync(rootEnvPath, 'utf8');
   content.split(/\r?\n/).forEach((line) => {
@@ -19,7 +22,7 @@ if (fs.existsSync(rootEnvPath)) {
       ) {
         value = value.slice(1, -1);
       }
-      if (!process.env[key]) {
+      if (process.env[key] === undefined) {
         process.env[key] = value;
       }
     }

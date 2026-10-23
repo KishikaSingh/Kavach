@@ -1,175 +1,127 @@
-# Hardware-Free Testing Workflow for Kavach
+# Kavach Hardware-Free Testing & Simulation Manual
 
-This guide provides a complete, repeatable workflow for testing the Kavach Smart Helmet mobile application and backend without physical helmet hardware (ESP32, MPU6050, NEO-6M GPS, SIM800L) and without touching production Firebase data.
-
----
-
-## 1. Architecture Overview
-
-Kavach supports two complementary tiers of hardware-free testing:
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           TESTING WORKFLOWS                             │
-├───────────────────────────────────┬─────────────────────────────────────┤
-│ 1. In-App Demo Mode               │ 2. Firebase Emulator Suite          │
-│    (Zero Backend / Pure In-Memory)│    (Full Database & Function Stack) │
-│ - Instant scenario switching      │ - Real Firebase Realtime Database   │
-│ - Live telemetry controls         │ - Real Auth & Security Rules        │
-│ - Simulated accident triggers     │ - Repeatable Seed & Reset Scripts   │
-│ - Zero network requests           │ - Cloud Functions event dispatch    │
-└───────────────────────────────────┴─────────────────────────────────────┘
-```
+*Engineering guide to the zero-dependency in-memory simulation engine and hardware-free test automation pipelines.*
 
 ---
 
-## 2. In-App Demo Mode
+## Table of Contents
 
-### Activating Demo Mode
-Demo Mode can be enabled at build/startup via the environment variable in `frontend/.env.local`:
-
-```dotenv
-EXPO_PUBLIC_DATA_SOURCE=demo
-```
-
-### Features & Controls
-When Demo Mode is active:
-1. **Interactive Demo Controls Bar**: Positioned at the top of the app with a visible `DEMO MODE` badge.
-2. **Quick Accident Trigger**: Tap **🚨 Trigger Accident** to instantly simulate an impact event.
-3. **Granular Telemetry Controls** (tap **Controls ▼**):
-   - **Battery**: Simulate unsupported sensor (`null`), low battery (`15%`), or healthy battery (`85%`).
-   - **Connectivity**: Toggle ESP32 link between `Connected` and `Offline` (simulating 30s+ silence).
-   - **GPS Status**: Toggle between `Available` (live fix), `Searching`, `Stale` (>5 min old), or `No Fix`.
-   - **Hardware Sensors**: Toggle MPU6050 sensor fault and GSM registration state.
-   - **Scenarios**: Switch between `normal`, `newAlert`, `gpsUnavailable`, `gpsStale`, `offline`, `sensorFault`, `gsmUnregistered`, `batterySupported`, and `emptyDevice`.
-   - **Reset**: Tap **↺ Reset All** to return to standard healthy helmet state.
+- [Architectural Scope & Objectives](#architectural-scope--objectives)
+- [Activating Hardware-Free Demo Mode](#activating-hardware-free-demo-mode)
+- [Interactive Scenario Catalog](#interactive-scenario-catalog)
+- [Granular Telemetry Mutation Controls](#granular-telemetry-mutation-controls)
+- [Simulated Collision Triggering & Safety Assertions](#simulated-collision-triggering--safety-assertions)
+- [Automated Verification & Regression Suites](#automated-verification--regression-suites)
+- [State Reset & Cleanup Procedures](#state-reset--cleanup-procedures)
 
 ---
 
-## 3. Firebase Emulator Suite Setup
+## Architectural Scope & Objectives
 
-The Firebase Emulator Suite provides an isolated local Firebase environment that mirrors the exact production Realtime Database and Cloud Functions without contacting Google Cloud or AWS.
+The **Kavach Hardware-Free Simulation Engine** decouples mobile client development and technical validation from physical embedded microcontrollers, cellular modems, and active cloud subscriptions.
 
-### Prerequisites
-- Node.js 18+ or 20+
-- Java Runtime Environment (JRE 11+) for Firebase Local Emulator
-- `firebase-tools` CLI (`npm install -g firebase-tools` or via `npx`)
-
-### Emulator Port Configuration (`backend/firebase.json`)
-- **Realtime Database**: `127.0.0.1:9000`
-- **Authentication**: `127.0.0.1:9099`
-- **Cloud Functions**: `127.0.0.1:5001`
-- **Emulator UI**: `http://localhost:4000`
-
-### Starting the Emulators
-From the `backend/` directory:
-
-```bash
-npx firebase-tools emulators:start --only database,auth,functions --project demo-kavach
-```
-
-Or run automated rules tests inside an ephemeral emulator:
-
-```bash
-npm --prefix functions run test:rules
-```
-
-### Connecting the Expo App to the Emulator
-In `frontend/.env.local`:
-
-```dotenv
-EXPO_PUBLIC_DATA_SOURCE=live
-EXPO_PUBLIC_USE_FIREBASE_EMULATOR=true
-EXPO_PUBLIC_DEVICE_ID=HELMET_DEV_001
-
-# For Android Emulator: 10.0.2.2
-# For iOS Simulator / Web: 127.0.0.1
-# For Physical Phone on Wi-Fi: <Your-Computer-LAN-IP>
-EXPO_PUBLIC_FIREBASE_EMULATOR_HOST=127.0.0.1
-```
+By implementing an in-memory reactive state machine adhering to the exact contracts of the live backend, developers and reviewers can:
+- Exercise all visual widgets and user flows without physical sensor jigs.
+- Simulate edge-case fault conditions (*satellite loss, low battery brownouts, sensor bus faults*) on demand.
+- Guarantee that simulated accidents never dispatch external cellular SMS messages or bill live cloud infrastructure.
 
 ---
 
-## 4. Repeatable Seed & Reset Scripts
+## Activating Hardware-Free Demo Mode
 
-Seed and reset scripts are located in `backend/functions/scripts/`.
+Hardware-free simulation is controlled via the centralized environment configuration:
 
-### 1. Seeding Test Data
-Populates the dedicated development device (`HELMET_DEV_001`), helmet ownership permissions, fictional emergency contacts, settings, and sample alerts:
-
-```bash
-npm --prefix backend/functions run seed
-```
-
-**Seeded Data Summary:**
-- **Device Record (`/devices/HELMET_DEV_001`)**:
-  - `deviceId`: `"HELMET_DEV_001"`
-  - `helmetStatus`: `"connected"`
-  - `accidentStatus`: `"normal"`
-  - `latitude`: `28.6692`, `longitude`: `77.4538`, `gpsValid`: `true`
-  - `gsmRegistered`: `true`, `mpuOk`: `true`
-- **Ownership Permission (`/deviceOwners/HELMET_DEV_001/test-user-dev`)**: `true`
-- **Fictional Emergency Contacts (`/users/test-user-dev/contacts`)**:
-  - `Dr. Vikram Sarabhai` (`+919999900001`, Primary)
-  - `Dr. APJ Abdul Kalam` (`+919999900002`, Secondary)
-  - `Prof. Satish Dhawan` (`+919999900003`, Secondary)
-- **Settings (`/users/test-user-dev/settings`)**:
-  - `{ notifications: { push: true, sound: true } }`
-- **Sample Alerts (`/alerts/HELMET_DEV_001`)**:
-  - `alert_dev_1`: High severity, new alert, pending SMS
-  - `alert_dev_2`: Medium severity, sent, confirmed SMS
-  - `alert_dev_3`: Low severity, resolved, no GPS
-
-### 2. Resetting Test Data
-Removes all test device telemetry, permissions, alerts, contacts, and notifications:
-
-```bash
-npm --prefix backend/functions run reset
-```
-
----
-
-## 5. Dedicated Development Firebase Project (Cloud Option)
-
-If testing on cloud infrastructure rather than the local emulator:
-1. Create a separate Firebase project (e.g., `kavach-development`), NEVER use the production project ID.
-2. In `frontend/.env.local`, specify the development project's credentials.
-3. Deploy rules using `npx firebase-tools deploy --only database --project kavach-development`.
-4. Run the seed script targeting the cloud database:
-   ```bash
-   FIREBASE_DATABASE_URL="https://kavach-development-default-rtdb.firebaseio.com" npm --prefix backend/functions run seed
+1. In the repository root `.env` file (copied from `.env.example`):
+   ```properties
+   EXPO_PUBLIC_DATA_SOURCE=demo
    ```
+2. Start the Expo development server:
+   ```bash
+   cd frontend
+   npx expo start -c
+   ```
+3. The mobile application boots directly into simulation mode, rendering an interactive **DEMO MODE** control drawer.
 
 ---
 
-## 6. Safety & Verification
+## Interactive Scenario Catalog
 
-### Safety Guarantees
-- **Mocked Emergency SMS**: In Demo Mode and during Emulator execution (`FUNCTIONS_EMULATOR=true` or `MOCK_EMERGENCY_DISPATCH=true`), real SMS is disabled by default. Simulated emergency contacts receive mock dispatches.
-- **Strict Security Rules**: `backend/firebase/database.rules.json` enforces authentication and device ownership. Rules are never loosened for testing.
+The simulation engine implements **10 distinct hardware and network scenarios** accessible via the in-app Demo Drawer:
 
-### Automated Test Commands
-Run all automated test suites to verify functionality:
-
-```bash
-# 1. Run frontend test suites (76 tests covering all services, hooks, screens)
-cd frontend
-npm test
-
-# 2. Run backend functions and SNS tests
-cd ../backend/functions
-npm test
-
-# 3. Verify Expo environment and configuration
-cd ../../frontend
-npx expo-doctor
-npm run lint
-```
+1. **`normal` (Nominal Cruising):**
+   - Helmet link: `connected`
+   - Incident status: `normal`
+   - Battery: `85%` healthy
+   - Satellite fix: `gpsValid = true` with live ground speed
+   - Sensor health: IMU `ok`, GSM `registered`
+2. **`newAlert` (High-G Vehicular Collision):**
+   - Transitions accident status to `alert`.
+   - Generates an active emergency alert item with severe impact kinematics.
+   - Dispatches in-app notifications and surfaces the emergency dispatch banner.
+3. **`gpsUnavailable` (Zero Satellite Visibility):**
+   - Simulates riding through deep tunnels or underground parking structures.
+   - Coordinates assert `null`; map marker is hidden; coordinates state unavailable.
+4. **`gpsStale` (Satellite Cache Expiration):**
+   - Satellite lock exists but fix timestamp is older than 5 minutes.
+   - Evaluates client staleness indicators and map marker dimming.
+5. **`offline` (Link Severed / Helmet Unreachable):**
+   - Simulates power loss or complete RF shielding exceeding the 30-second heartbeat window.
+   - Dashboard status transitions to `disconnected`, preserving the last known telemetry fix.
+6. **`sensorFault` (MPU6050 Bus Failure):**
+   - I2C communication with the inertial motion unit drops.
+   - Dashboard displays hardware diagnostic warnings.
+7. **`gsmUnregistered` (Cellular Outage):**
+   - Modem loses cellular tower registration.
+   - UI reflects degraded standalone operation.
+8. **`batterySupported` (Low Battery Critical Alert):**
+   - Battery level drops to `15%`.
+   - Triggers low-voltage warning banners and visual indicators.
+9. **`emptyDevice` (Unpaired Hardware Initial State):**
+   - Simulates a freshly installed app before helmet association.
+   - Validates that UI gracefully handles empty hardware states without throwing runtime exceptions.
+10. **`reset` (Baseline Restoration):**
+    - Clears all simulated incidents and restores healthy nominal Cruising state.
 
 ---
 
-## 7. Limitations
+## Granular Telemetry Mutation Controls
 
-- **Simulated vs. Physical IMU**: Demo Mode tests software threshold filtering and alert dispatch logic, but does not simulate physical MEMS accelerometer noise or vibration calibration.
-- **Cellular Network Latency**: Physical SIM800L module latency and AT command timeout recovery are tested via software contracts, but real carrier signal dropouts require hardware validation.
-- **Push Notification on Expo Go**: Remote Expo Push Notifications require a development build (`eas build --profile development`); in Expo Go or web, in-app notifications are used.
+In addition to canned scenarios, the Demo Drawer provides granular controls for runtime mutation:
+
+- **Battery State:** Toggle between unsupported sensor (`null`), critical charge (`15%`), and healthy charge (`85%`).
+- **Connection Health:** Toggle the ESP32 wireless link between active `Connected` and simulated `Offline`.
+- **GPS Satellite Status:** Toggle between active fix (`Available`), satellite acquisition (`Searching`), expired cache (`Stale`), or complete loss (`No Fix`).
+- **Subsystem Sensors:** Toggle simulated MPU6050 hardware diagnostic flags and cellular GSM registration states.
+
+---
+
+## Simulated Collision Triggering & Safety Assertions
+
+To trigger a high-G collision event during simulation:
+
+1. Tap **Trigger Accident** inside the Demo Drawer.
+2. The simulation engine constructs an incident payload matching the production contract:
+   - `alertId`: Unique simulation identifier.
+   - `severity`: `"high"` (calibrated impact vector).
+   - `latitude` / `longitude`: Bangalore baseline coordinates.
+   - `status`: `"new"`.
+3. **Safety Guarantee:** The client-side SMS gateway detects demo mode and sets the delivery status to `demo_sent`. Real cellular AT commands and external HTTP webhook requests are strictly blocked.
+
+---
+
+## Automated Verification & Regression Suites
+
+The hardware-free simulation engine is guarded by automated test suites executed via `npm test`:
+
+- **`hardware-free-workflow.test.js`**: Systematically evaluates every scenario state transition, telemetry control mutation, and subscription reactivity.
+- **`demo-data-layer.test.js`**: Validates in-memory storage, contact deduplication, and notification indexing.
+- **`device-settings.test.js`**: Asserts that visual widgets never crash when encountering unpopulated or `null` simulated settings.
+
+---
+
+## State Reset & Cleanup Procedures
+
+To clear all simulated alerts, reset emergency contacts, and restore the default state:
+
+- Tap **Reset All** within the in-app Demo Drawer.
+- Alternatively, clear application cache in Expo Go by reloading the bundle (`r` key in Metro terminal).

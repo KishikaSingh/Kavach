@@ -22,7 +22,6 @@ aws_credentials/
 
 # Preserve committed example templates
 !.env.example
-!frontend/.env.example
 !*.tfvars.example
 
 # Service accounts & Cloud credentials

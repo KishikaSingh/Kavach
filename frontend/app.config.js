@@ -2,7 +2,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // Ensure root .env is loaded as the single source of truth
-const rootEnvPath = path.resolve(__dirname, '..', '.env');
+const rootEnvPath = fs.existsSync(path.resolve(__dirname, '..', '.env'))
+  ? path.resolve(__dirname, '..', '.env')
+  : path.resolve(process.cwd(), '.env');
+
 if (fs.existsSync(rootEnvPath)) {
   const content = fs.readFileSync(rootEnvPath, 'utf8');
   content.split(/\r?\n/).forEach((line) => {
@@ -18,7 +21,9 @@ if (fs.existsSync(rootEnvPath)) {
       ) {
         value = value.slice(1, -1);
       }
-      process.env[key] = value;
+      if (process.env[key] === undefined) {
+        process.env[key] = value;
+      }
     }
   });
 }
